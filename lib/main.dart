@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/home_screen.dart';
+import 'package:flutter_application_2/register_view.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Importa la biblioteca para soporte FFI
 
 import 'login_view.dart';
@@ -29,8 +30,9 @@ class MyApp extends StatelessWidget {
       title: 'CRUD Usuarios',
       initialRoute: '/login',
       routes: {
-        '/login': (context) => LoginPage(),
-        '/home': (context) => HomeScreen(),
+        '/register': (context) => const RegisterPage(),
+        '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomeScreen(),
       },
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),

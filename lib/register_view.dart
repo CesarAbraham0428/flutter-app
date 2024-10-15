@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _LoginPageState createState() => _LoginPageState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   String _username = '';
@@ -18,9 +17,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text('Registro de Usuario')),
       body: Padding(
-        padding: const EdgeInsets.all(25.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -29,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: const InputDecoration(labelText: 'Usuario'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese su usuario';
+                    return 'Ingresa tu usuario';
                   }
                   return null;
                 },
@@ -40,21 +39,16 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese su contraseña';
+                    return 'Ingrese tu contraseña';
                   }
                   return null;
                 },
                 onSaved: (value) => _password = value!,
               ),
-             
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submit,
-                child: const Text('Iniciar sesión'),
-              ),
-               ElevatedButton(
-                onPressed: _submit,
-                child: const Text('Registrarse'),
+                child: const Text('Registrar'),
               ),
             ],
           ),
@@ -68,9 +62,8 @@ class _LoginPageState extends State<LoginPage> {
       _formKey.currentState!.save();
       // Aquí iría la lógica de autenticación
       
-      
       // Si la autenticación es exitosa, navega a la página principal
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 }
