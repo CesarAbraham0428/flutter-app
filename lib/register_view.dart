@@ -39,7 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingrese tu contraseña';
+                    return 'Ingres tu contraseña';
                   }
                   return null;
                 },

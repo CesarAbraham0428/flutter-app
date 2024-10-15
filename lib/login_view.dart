@@ -63,20 +63,20 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _submit() async {
+void _submit() async {
     if (_formKey.currentState!.validate()) {
-      final user = await SQLHelper.login_User(
+      bool loginSuccess = await SQLHelper.login_user(
         _usernameController.text,
         _passwordController.text,
       );
 
-      if (user != null) {
+      if (loginSuccess) {
         // Login exitoso
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         // Login fallido
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Usuario o contraseña incorrectos')),
+          const SnackBar(content: Text('Usuario o contraseña incorrectos')),
         );
       }
     }
