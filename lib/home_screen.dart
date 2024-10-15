@@ -128,6 +128,14 @@ class _HomeScreen extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text("Ejemplo de SQLite (CRUD USUARIOS)"),
         backgroundColor: const Color.fromARGB(255, 231, 221, 188),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(

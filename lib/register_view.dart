@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/db_helper.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -9,10 +10,8 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
-  String _username = '';
-
-  String _password = '';
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             children: [
               TextFormField(
+                controller: _usernameController,
                 decoration: const InputDecoration(labelText: 'Usuario'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -32,9 +32,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   }
                   return null;
                 },
-                onSaved: (value) => _username = value!,
               ),
               TextFormField(
+                controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Contraseña'),
                 obscureText: true,
                 validator: (value) {
@@ -43,7 +43,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   }
                   return null;
                 },
-                onSaved: (value) => _password = value!,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -57,13 +56,22 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      // Aquí iría la lógica de autenticación
-      
-      // Si la autenticación es exitosa, navega a la página principal
-      Navigator.pushReplacementNamed(context, '/login');
+      try {
+        int userId = await SQLHelper.createUser(
+          _usernameController.text,
+          _passwordController.text,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Usuario registrado con ID: $userId')),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar: $e')),
+        );
+      }
     }
   }
 }

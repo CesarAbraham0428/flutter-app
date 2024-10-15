@@ -30,8 +30,8 @@ class MyApp extends StatelessWidget {
       title: 'CRUD Usuarios',
       initialRoute: '/login',
       routes: {
-        '/register': (context) => const RegisterPage(),
         '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomeScreen(),
       },
       theme: ThemeData(

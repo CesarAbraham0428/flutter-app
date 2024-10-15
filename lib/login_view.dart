@@ -1,31 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/db_helper.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-
-  String _username = '';
-
-  String _password = '';
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Login')),
       body: Padding(
-        padding: const EdgeInsets.all(25.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
+                controller: _usernameController,
                 decoration: const InputDecoration(labelText: 'Usuario'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -33,9 +32,9 @@ class _LoginPageState extends State<LoginPage> {
                   }
                   return null;
                 },
-                onSaved: (value) => _username = value!,
               ),
               TextFormField(
+                controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Contraseña'),
                 obscureText: true,
                 validator: (value) {
@@ -44,17 +43,18 @@ class _LoginPageState extends State<LoginPage> {
                   }
                   return null;
                 },
-                onSaved: (value) => _password = value!,
               ),
-             
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submit,
-                child: const Text('Iniciar sesión'),
+                child: Text('Iniciar sesión'),
               ),
-               ElevatedButton(
-                onPressed: _submit,
-                child: const Text('Registrarse'),
+              SizedBox(height: 10),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/register');
+                },
+                child: Text('¿No tienes cuenta? Regístrate'),
               ),
             ],
           ),
@@ -63,14 +63,22 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      // Aquí iría la lógica de autenticación
-      
-      
-      // Si la autenticación es exitosa, navega a la página principal
-      Navigator.pushReplacementNamed(context, '/home');
+      final user = await SQLHelper.login_User(
+        _usernameController.text,
+        _passwordController.text,
+      );
+
+      if (user != null) {
+        // Login exitoso
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Login fallido
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Usuario o contraseña incorrectos')),
+        );
+      }
     }
   }
 }

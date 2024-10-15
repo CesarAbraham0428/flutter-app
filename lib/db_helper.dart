@@ -54,15 +54,20 @@ class SQLHelper {
     return id;
   }
 
-  Future<bool> login_User(String userName, String? pass) async {
+ static Future<Map<String, dynamic>?> login_User(String userName, String pass) async {
     final db = await SQLHelper.db();
-    List<Map<String, dynamic>> user = await db.query(
+    List<Map<String, dynamic>> users = await db.query(
       'user_app',
       where: 'user_name = ? AND pass = ?',
       whereArgs: [userName, pass],
+      limit: 1,
     );
 
-    return user.isNotEmpty;
+    if (users.isNotEmpty) {
+      return users.first;
+    } else {
+      return null;
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getAllUser() async {
