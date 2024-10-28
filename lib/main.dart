@@ -6,6 +6,8 @@ import 'package:flutter_application_2/login_view.dart';
 import 'package:flutter_application_2/register_view.dart';
 import 'package:flutter_application_2/admin_home_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Importa la biblioteca para soporte FFI
+import 'package:flutter_application_2/productosScreen.dart';
+import 'package:flutter_application_2/usuariosScreen.dart';
 
 Future<void> main() async {
   // Verifica si estás en un entorno de escritorio y configúralo
@@ -39,6 +41,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomeScreen(),
         '/adminHome': (context) => const AdminHomeScreen(),
+        '/manageProducts': (context) => const ManageProductsScreen(),
+        '/manageUsers': (context) => const ManageUsersScreen(),
       },
 
       theme: ThemeData(
