@@ -99,15 +99,16 @@ Future<List<String>> getPermissionsForUser(int userId) async {
     return db.query('user_app', orderBy: 'id'); // Cambié 'user' a 'user_app'
   }
 
-  static Future<int> updateUserRole(int id, String rol) async {
-    final db = await SQLHelper.db();
-    return await db.update(
-      'user_app',
-      {'rol': rol},
-      where: "id = ?",
-      whereArgs: [id],
-    );
-  }
+// Actualiza el rol de un usuario existente en la tabla `rol_permiso`
+static Future<void> updateUserRole(int userId, String rol) async {
+  final db = await SQLHelper.db();
+  await db.update(
+    'rol_permiso',
+    {'rol': rol},
+    where: "userId = ?",
+    whereArgs: [userId],
+  );
+}
 
   static Future<List<Map<String, dynamic>>> getSingleUser(int id) async {
     final db = await SQLHelper.db();
@@ -122,6 +123,7 @@ Future<List<String>> getPermissionsForUser(int userId) async {
       'pass': desc,
       'createdAT': DateTime.now().toString()
     };
+    
     final id2 = await db.update(
       'user_app',
       userApp,
@@ -138,6 +140,15 @@ Future<List<String>> getPermissionsForUser(int userId) async {
           where: "id = ?", whereArgs: [id]); // Cambié 'user' a 'user_app'
     } catch (e) {}
   }
+
+// Asigna un rol a un usuario en la tabla `rol_permiso`
+Future<void> assignRole(int userId, String rol) async {
+  final db = await SQLHelper.db();
+  await db.insert('rol_permiso', {
+    'userId': userId,
+    'rol': rol,
+  });
+}
 
 // Métodos para productos
   static const urlProducto = "https://http2.mlstatic.com/D_NQ_NP_926115-MLA54902631714_042023-O.webp";

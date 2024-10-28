@@ -12,6 +12,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  String _selectedRole = 'usuario';
   bool _isEditing = false;
   int? _editingUserId;
 
@@ -23,12 +24,28 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     _fetchUsers();
   }
 
-  Future<void> _fetchUsers() async {
-    final users = await SQLHelper.getAllUser();
-    setState(() {
-      _users = users;
-    });
+Future<void> _fetchUsers() async {
+  final users = await SQLHelper.getAllUser();
+  List<Map<String, dynamic>> userList = [];
+
+  // Itera cada usuario y crea un clon del Map para poder modificarlo
+  for (var user in users) {
+    int userId = user['id'];
+
+    // Clona el mapa para hacerlo mutable
+    Map<String, dynamic> userClone = Map<String, dynamic>.from(user);
+
+    // Obtiene el rol del usuario
+    List<String> roles = await SQLHelper().getPermissionsForUser(userId);
+    userClone['rol'] = roles.isNotEmpty ? roles[0] : 'usuario';
+
+    userList.add(userClone);
   }
+
+  setState(() {
+    _users = userList;
+  });
+}
 
   Future<void> _submitUser() async {
     if (_formKey.currentState!.validate()) {
@@ -38,11 +55,18 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           _nameController.text,
           _passController.text,
         );
+
+        // Actualiza el rol en la tabla `rol_permiso`
+        await SQLHelper.updateUserRole(_editingUserId!, _selectedRole);
       } else {
-        await SQLHelper.createUser(
+        // Crea un nuevo usuario
+        int userId = await SQLHelper.createUser(
           _nameController.text,
           _passController.text,
         );
+
+        // Asigna el rol seleccionado
+        await SQLHelper().assignRole(userId, _selectedRole);
       }
 
       _clearForm();
@@ -54,6 +78,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     _nameController.clear();
     _passController.clear();
     setState(() {
+      _selectedRole = 'usuario';
       _isEditing = false;
       _editingUserId = null;
     });
@@ -65,6 +90,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       _editingUserId = user['id'];
       _nameController.text = user['user_name'];
       _passController.text = user['pass'];
+      _selectedRole = user['rol'];
     });
   }
 
@@ -105,6 +131,19 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       return null;
                     },
                   ),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: const InputDecoration(labelText: 'Rol'),
+                    items: const [
+                      DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
+                      DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedRole = value!;
+                      });
+                    },
+                  ),
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: _submitUser,
@@ -121,7 +160,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text('Contraseña: ${user['pass']}'),
+                    subtitle: Text('Contraseña: ${user['pass']} | Rol: ${user['rol']}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
