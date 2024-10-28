@@ -1,24 +1,28 @@
 //lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/home_screen.dart';
+import 'package:flutter_application_2/login_view.dart';
 import 'package:flutter_application_2/register_view.dart';
+import 'package:flutter_application_2/admin_home_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Importa la biblioteca para soporte FFI
 
-import 'login_view.dart';
-
-void main() {
+Future<void> main() async {
   // Verifica si estás en un entorno de escritorio y configúralo
   if (isDesktop()) {
     sqfliteFfiInit(); // Inicializa FFI
-    databaseFactory = databaseFactoryFfi; // Establece el `databaseFactory` global
+    databaseFactory =
+        databaseFactoryFfi; // Establece el `databaseFactory` global
   }
-
+  // Crear usuario admin (esto es temporal, solo para la inserción inicial)
+  await SQLHelper.createAdminUser("cesar", "hola");
   runApp(const MyApp());
 }
 
 bool isDesktop() {
   // Función para verificar si estamos en un entorno de escritorio
-  return !identical(0, 0.0); // Hack para detectar si se ejecuta en Flutter Desktop
+  return !identical(
+      0, 0.0); // Hack para detectar si se ejecuta en Flutter Desktop
 }
 
 class MyApp extends StatelessWidget {
@@ -34,7 +38,9 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomeScreen(),
+        '/adminHome': (context) => const AdminHomeScreen(),
       },
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,

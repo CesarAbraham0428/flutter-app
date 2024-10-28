@@ -57,22 +57,22 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        int userId = await SQLHelper.createUser(
-          _usernameController.text,
-          _passwordController.text,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Usuario registrado con ID: $userId')),
-        );
-        Navigator.pushReplacementNamed(context, '/login');
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al registrar: $e')),
-        );
-      }
+void _submit() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+      int userId = await SQLHelper.createUser(
+        _usernameController.text,
+        _passwordController.text,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Usuario registrado con ID: $userId')),
+      );
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al registrar: $e')),
+      );
     }
   }
+}
 }

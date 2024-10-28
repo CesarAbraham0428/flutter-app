@@ -65,21 +65,30 @@ class _LoginPageState extends State<LoginPage> {
   }
 
 void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      bool loginSuccess = await SQLHelper.login_user(
-        _usernameController.text,
-        _passwordController.text,
-      );
+  if (_formKey.currentState!.validate()) {
+    Map<String, dynamic>? user = await SQLHelper.login_user(
+      _usernameController.text,
+      _passwordController.text,
+    );
 
-      if (loginSuccess) {
-        // Login exitoso
+    if (user != null) {
+      int userId = user['id'];
+      List<String> roles = await SQLHelper().getPermissionsForUser(userId);
+
+      if (roles.contains('admin')) {
+        Navigator.pushReplacementNamed(context, '/adminHome');
+      } else if (roles.contains('usuario')) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
-        // Login fallido
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario o contraseña incorrectos')),
+          const SnackBar(content: Text('Rol no reconocido')),
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuario o contraseña incorrectos')),
+      );
     }
   }
+}
 }
