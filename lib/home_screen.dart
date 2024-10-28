@@ -1,4 +1,6 @@
+//lib/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/db_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +29,7 @@ class _HomeScreen extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(185, 170, 245, 1),
       appBar: AppBar(
-        title: const Text("Ejemplo de SQLite (CRUD USUARIOS)"),
+        title: const Text("Catalogo de Productos de Ropa"),
         backgroundColor: const Color.fromARGB(255, 231, 221, 188),
         actions: [
           IconButton(
@@ -42,9 +44,34 @@ class _HomeScreen extends State<HomeScreen> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : ListView.builder(
-              itemBuilder: (BuildContext context, int index) {},
-            ),
+          : ListView(
+            children: [
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          ),
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          ),
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          ),
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          ),
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          ),
+           Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Image.network(SQLHelper.urlProducto),
+          )
+            ]
+          )
     );
   }
 }

@@ -1,3 +1,5 @@
+//lib/db_helper.dart
+import 'dart:ffi';
 import 'package:sqflite/sqflite.dart' as sql;
 
 class SQLHelper {
@@ -54,15 +56,13 @@ class SQLHelper {
     return id;
   }
 
-static Future<bool> login_user(String nombre, String pass) async {
+  static Future<bool> login_user(String nombre, String pass) async {
     final db = await SQLHelper.db();
-    List<Map<String, dynamic>> user = await db.query(
-      'user_app',
-      where: 'user_name = ? AND pass = ?',
-      whereArgs: [nombre, pass],
-      limit: 1
-    );
-    
+    List<Map<String, dynamic>> user = await db.query('user_app',
+        where: 'user_name = ? AND pass = ?',
+        whereArgs: [nombre, pass],
+        limit: 1);
+
     return user.isNotEmpty;
   }
 
@@ -84,7 +84,7 @@ static Future<bool> login_user(String nombre, String pass) async {
       'pass': desc,
       'createdAT': DateTime.now().toString()
     };
-    final id2 =await db.update(
+    final id2 = await db.update(
       'user_app',
       userApp,
       where: "id = ?",
@@ -98,8 +98,57 @@ static Future<bool> login_user(String nombre, String pass) async {
     try {
       await db.delete('user_app',
           where: "id = ?", whereArgs: [id]); // Cambié 'user' a 'user_app'
-    } catch (e) {
-      print("Error al eliminar el registro: $e");
-}
-}
+    } catch (e) {}
+  }
+
+// Métodos para productos
+
+  static const urlProducto =
+      "https://http2.mlstatic.com/D_NQ_NP_926115-MLA54902631714_042023-O.webp";
+
+  static Future<List<Map<String, dynamic>>> getAllProductos() async {
+    final db = await SQLHelper.db();
+    return db.query('producto_app', orderBy: 'id');
+  }
+
+  static Future<int> createProductos(String nombre_product, Double precio,
+      Int cantidad_producto, String imagen) async {
+    final db = await SQLHelper.db();
+    final userApp = {
+      'nombre_product': nombre_product,
+      'precio': precio,
+      'cantidad_producto': 1,
+      'imagen': urlProducto,
+    };
+    final id = await db.insert('producto_app', userApp,
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
+    return id;
+  }
+
+  static Future<int> updateProducto(int id, String nombre_product,
+      Double precio, Int cantidad_producto, String imagen) async {
+    final db = await SQLHelper.db();
+    final userApp = {
+      'nombre_product': nombre_product,
+      'precio': precio,
+      'cantidad_producto': 1,
+      'imagen': urlProducto,
+      'createdAT': DateTime.now().toString()
+    };
+    final id2 = await db.update(
+      'producto_app',
+      userApp,
+      where: "id = ?",
+      whereArgs: [id],
+    );
+    return id2;
+  }
+
+  static Future<void> deleteProducto(int id) async {
+    final db = await SQLHelper.db();
+    try {
+      await db.delete('producto_app',
+          where: "id = ?", whereArgs: [id]);
+    } catch (e) {}
+  }
 }
