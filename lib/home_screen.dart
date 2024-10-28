@@ -1,27 +1,29 @@
-//lib/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreen();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreen extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
-
-  void _refreshUser() async {
-    setState(() {
-      _isLoading = false;
-    });
-  }
+  List<Map<String, dynamic>> _products = [];
 
   @override
   void initState() {
     super.initState();
-    _refreshUser();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    final products = await SQLHelper.getAllProductos();
+    setState(() {
+      _products = products;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -29,7 +31,7 @@ class _HomeScreen extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(185, 170, 245, 1),
       appBar: AppBar(
-        title: const Text("Catalogo de Productos de Ropa"),
+        title: const Text("Catálogo de Productos"),
         backgroundColor: const Color.fromARGB(255, 231, 221, 188),
         actions: [
           IconButton(
@@ -41,37 +43,30 @@ class _HomeScreen extends State<HomeScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : ListView(
-            children: [
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          ),
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          ),
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          ),
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          ),
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          ),
-           Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Image.network(SQLHelper.urlProducto),
-          )
-            ]
-          )
+          ? const Center(child: CircularProgressIndicator())
+          : _products.isEmpty
+              ? const Center(child: Text('No hay productos disponibles'))
+              : ListView.builder(
+                  itemCount: _products.length,
+                  itemBuilder: (context, index) {
+                    final product = _products[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.all(10),
+                      leading: Image.network(
+                        product['imagen'],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image, size: 50),
+                      ),
+                      title: Text(product['nombre_product']),
+                      subtitle: Text(
+                        'Precio: \$${product['precio']}  |  Cantidad: ${product['cantidad_producto']}',
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }
