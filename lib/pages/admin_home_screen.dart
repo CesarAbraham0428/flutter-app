@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
-import 'package:flutter_application_2/productosScreen.dart';
-import 'package:flutter_application_2/usuariosScreen.dart';
+import 'package:flutter_application_2/cruds/productos_screen.dart';
+import 'package:flutter_application_2/cruds/usuarios_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({Key? key}) : super(key: key);
@@ -28,20 +28,24 @@ class AdminHomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ManageUsersScreen()),
+                  MaterialPageRoute(builder: (context) => const UsuariosScreen()),
                 );
               },
-              child: const Text('Gestionar Usuarios'),
+              child: const Center(
+                child: Text('Gestionar Usuarios'),
+              ),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ManageProductsScreen()),
+                  MaterialPageRoute(builder: (context) => const ProductosScreen()),
                 );
               },
-              child: const Text('Gestionar Productos'),
+               child: const Center(
+                child: Text('Gestionar Productos'),
+              ),
             ),
           ],
         ),

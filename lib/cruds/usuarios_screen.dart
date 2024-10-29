@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 
-class ManageUsersScreen extends StatefulWidget {
-  const ManageUsersScreen({Key? key}) : super(key: key);
+class UsuariosScreen extends StatefulWidget {
+  const UsuariosScreen({Key? key}) : super(key: key);
 
   @override
-  _ManageUsersScreenState createState() => _ManageUsersScreenState();
+  _UsuariosScreenState createState() => _UsuariosScreenState();
 }
 
-class _ManageUsersScreenState extends State<ManageUsersScreen> {
+class _UsuariosScreenState extends State<UsuariosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
@@ -124,6 +124,7 @@ Future<void> _fetchUsers() async {
                   TextFormField(
                     controller: _passController,
                     decoration: const InputDecoration(labelText: 'Contraseña'),
+                    obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Ingrese la contraseña';

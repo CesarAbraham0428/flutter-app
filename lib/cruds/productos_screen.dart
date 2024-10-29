@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 
-class ManageProductsScreen extends StatefulWidget {
-  const ManageProductsScreen({Key? key}) : super(key: key);
+class ProductosScreen extends StatefulWidget {
+  const ProductosScreen({Key? key}) : super(key: key);
 
   @override
-  _ManageProductsScreenState createState() => _ManageProductsScreenState();
+  _ProductosScreenState createState() => _ProductosScreenState();
 }
 
-class _ManageProductsScreenState extends State<ManageProductsScreen> {
+class _ProductosScreenState extends State<ProductosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
