@@ -12,7 +12,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
-  String _selectedRole = 'usuario';
+  String _selectedRole = 'usuario'; // Rol predeterminado
   bool _isEditing = false;
   int? _editingUserId;
 
@@ -75,19 +75,20 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     _nameController.clear();
     _passController.clear();
     setState(() {
-      _selectedRole = 'usuario';
+      _selectedRole = 'usuario'; // Restablece el rol predeterminado
       _isEditing = false;
       _editingUserId = null;
     });
   }
 
-  void _startEditing(Map<String, dynamic> user) {
-    setState(() {
+  void _startEditing(Map<String, dynamic> user) async {
+    setState(() async {
       _isEditing = true;
       _editingUserId = user['id'];
       _nameController.text = user['user_name'];
-      _passController.clear(); // No mostramos la contraseña
-      _selectedRole = user['rol'];
+      _passController.clear(); // No mostramos la contraseña en el formulario
+      List<String> roles = await SQLHelper().getPermissionsForUser(user['id']);
+      _selectedRole = roles.isNotEmpty ? roles[0] : 'usuario'; // Establece el rol correcto
     });
   }
 
@@ -161,7 +162,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text('Rol: ${user['rol']}'),
+                    subtitle: Text(
+                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
