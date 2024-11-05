@@ -24,48 +24,45 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     _fetchUsers();
   }
 
-Future<void> _fetchUsers() async {
-  final users = await SQLHelper.getAllUser();
-  List<Map<String, dynamic>> userList = [];
+  Future<void> _fetchUsers() async {
+    final users = await SQLHelper.getAllUser();
+    List<Map<String, dynamic>> userList = [];
 
-  // Itera cada usuario y crea un clon del Map para poder modificarlo
-  for (var user in users) {
-    int userId = user['id'];
+    for (var user in users) {
+      int userId = user['id'];
+      Map<String, dynamic> userClone = Map<String, dynamic>.from(user);
+      List<String> roles = await SQLHelper().getPermissionsForUser(userId);
+      userClone['rol'] = roles.isNotEmpty ? roles[0] : 'usuario';
+      userList.add(userClone);
+    }
 
-    // Clona el mapa para hacerlo mutable
-    Map<String, dynamic> userClone = Map<String, dynamic>.from(user);
-
-    // Obtiene el rol del usuario
-    List<String> roles = await SQLHelper().getPermissionsForUser(userId);
-    userClone['rol'] = roles.isNotEmpty ? roles[0] : 'usuario';
-
-    userList.add(userClone);
+    setState(() {
+      _users = userList;
+    });
   }
-
-  setState(() {
-    _users = userList;
-  });
-}
 
   Future<void> _submitUser() async {
     if (_formKey.currentState!.validate()) {
       if (_isEditing && _editingUserId != null) {
-        await SQLHelper.updateUser(
-          _editingUserId!,
-          _nameController.text,
-          _passController.text,
-        );
+        // Actualiza el usuario con la nueva contraseña encriptada
+        if (_passController.text.isNotEmpty) {
+          await SQLHelper.updateUser(
+            _editingUserId!,
+            _nameController.text,
+            _passController.text,
+          );
+        }
 
-        // Actualiza el rol en la tabla `rol_permiso`
+        // Actualiza el rol
         await SQLHelper.updateUserRole(_editingUserId!, _selectedRole);
       } else {
-        // Crea un nuevo usuario
+        // Crea un nuevo usuario con la contraseña encriptada
         int userId = await SQLHelper.createUser(
           _nameController.text,
           _passController.text,
         );
 
-        // Asigna el rol seleccionado
+        // Asigna el rol
         await SQLHelper().assignRole(userId, _selectedRole);
       }
 
@@ -89,7 +86,7 @@ Future<void> _fetchUsers() async {
       _isEditing = true;
       _editingUserId = user['id'];
       _nameController.text = user['user_name'];
-      _passController.text = user['pass'];
+      _passController.clear(); // No mostramos la contraseña
       _selectedRole = user['rol'];
     });
   }
@@ -123,11 +120,14 @@ Future<void> _fetchUsers() async {
                   ),
                   TextFormField(
                     controller: _passController,
-                    decoration: const InputDecoration(labelText: 'Contraseña'),
+                    decoration: const InputDecoration(labelText: 'Nueva Contraseña'),
                     obscureText: true,
                     validator: (value) {
+                      if (_isEditing && (value == null || value.isEmpty)) {
+                        return null; // La contraseña puede ser vacía si no se quiere cambiar
+                      }
                       if (value == null || value.isEmpty) {
-                        return 'Ingrese la contraseña';
+                        return 'Ingrese una contraseña';
                       }
                       return null;
                     },
@@ -161,7 +161,7 @@ Future<void> _fetchUsers() async {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text('Contraseña: ${user['pass']} | Rol: ${user['rol']}'),
+                    subtitle: Text('Rol: ${user['rol']}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

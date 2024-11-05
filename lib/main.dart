@@ -16,8 +16,9 @@ Future<void> main() async {
     databaseFactory =
         databaseFactoryFfi; // Establece el `databaseFactory` global
   }
-  // Crear usuario admin (esto es temporal, solo para la inserción inicial)
+  // Actualiza la contraseña del administrador "cesar" a una versión encriptada
   await SQLHelper.createAdminUser("cesar", "hola");
+  await SQLHelper.updateAdminPassword();
   runApp(const MyApp());
 }
 

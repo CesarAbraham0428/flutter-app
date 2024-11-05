@@ -1,6 +1,8 @@
 //lib/db_helper.dart
 import 'dart:ffi';
+import 'package:flutter_application_2/encyption_helper.dart';
 import 'package:sqflite/sqflite.dart' as sql;
+import 'package:crypto/crypto.dart'; // Importa el paquete crypto
 
 class SQLHelper {
   static Future<void> createTables(sql.Database database) async {
@@ -10,7 +12,6 @@ class SQLHelper {
     pass TEXT,
     createdAT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""");
-
 
     await database.execute("""CREATE TABLE producto_app(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -36,45 +37,43 @@ class SQLHelper {
     });
   }
 
-static Future<int> createUser(String user, String? pass) async {
+  static Future<int> createUser(String user, String? pass) async {
     final db = await SQLHelper.db();
+    final hashedPass =
+        EncryptionHelper.hashPassword(pass!); // Encripta la contraseña
+    final userApp = {
+      'user_name': user,
+      'pass': hashedPass, // Guarda la contraseña encriptada
+    };
+    int userId = await db.insert('user_app', userApp,
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
+
+    // Asigna el rol de usuario por defecto en rol_permiso
+    await db.insert('rol_permiso', {
+      'userId': userId,
+      'rol': 'usuario',
+    });
+    return userId;
+  }
+
+  static Future<int> createAdminUser(String user, String pass) async {
+    final db = await SQLHelper.db();
+
+    // Inserta el usuario en la tabla `user_app`
     final userApp = {
       'user_name': user,
       'pass': pass,
     };
     int userId = await db.insert('user_app', userApp,
         conflictAlgorithm: sql.ConflictAlgorithm.replace);
-    
-    // Asigna el rol de usuario por defecto en rol_permiso
-    await db.insert('rol_permiso', {
-      'userId': userId,
-      'rol': 'usuario'
-    });
+
+    // Asigna el rol de administrador en la tabla `rol_permiso`
+    await db.insert('rol_permiso', {'userId': userId, 'rol': 'admin'});
+
     return userId;
   }
 
-static Future<int> createAdminUser(String user, String pass) async {
-  final db = await SQLHelper.db();
-
-  // Inserta el usuario en la tabla `user_app`
-  final userApp = {
-    'user_name': user,
-    'pass': pass,
-  };
-  int userId = await db.insert('user_app', userApp,
-      conflictAlgorithm: sql.ConflictAlgorithm.replace);
-  
-  // Asigna el rol de administrador en la tabla `rol_permiso`
-  await db.insert('rol_permiso', {
-    'userId': userId,
-    'rol': 'admin'
-  });
-
-  return userId;
-}
-
-
-Future<List<String>> getPermissionsForUser(int userId) async {
+  Future<List<String>> getPermissionsForUser(int userId) async {
     final db = await SQLHelper.db();
     List<Map<String, dynamic>> permisoUser = await db.query('rol_permiso',
         columns: ['rol'], where: 'userId = ?', whereArgs: [userId]);
@@ -84,11 +83,15 @@ Future<List<String>> getPermissionsForUser(int userId) async {
     });
   }
 
-  static Future<Map<String, dynamic>?> login_user(String nombre, String pass) async {
+// Verifica las credenciales de inicio de sesión con la contraseña encriptada
+  static Future<Map<String, dynamic>?> login_user(
+      String nombre, String pass) async {
     final db = await SQLHelper.db();
+    final hashedPass =
+        EncryptionHelper.hashPassword(pass); // Encripta la contraseña
     List<Map<String, dynamic>> user = await db.query('user_app',
         where: 'user_name = ? AND pass = ?',
-        whereArgs: [nombre, pass],
+        whereArgs: [nombre, hashedPass], // Compara con la contraseña encriptada
         limit: 1);
 
     return user.isNotEmpty ? user.first : null;
@@ -102,11 +105,25 @@ Future<List<String>> getPermissionsForUser(int userId) async {
 // Actualiza el rol de un usuario existente en la tabla `rol_permiso`
 static Future<void> updateUserRole(int userId, String rol) async {
   final db = await SQLHelper.db();
+  
+  // Elimina el rol existente
+  await db.delete('rol_permiso', where: 'userId = ?', whereArgs: [userId]);
+  
+  // Inserta el nuevo rol
+  await db.insert('rol_permiso', {
+    'userId': userId,
+    'rol': rol,
+  });
+}
+
+static Future<void> updateAdminPassword() async {
+  final db = await SQLHelper.db();
+  final hashedPass = EncryptionHelper.hashPassword("hola"); // Encripta la contraseña "hola"
   await db.update(
-    'rol_permiso',
-    {'rol': rol},
-    where: "userId = ?",
-    whereArgs: [userId],
+    'user_app',
+    {'pass': hashedPass},
+    where: 'user_name = ?',
+    whereArgs: ['cesar'],
   );
 }
 
@@ -116,21 +133,21 @@ static Future<void> updateUserRole(int userId, String rol) async {
         where: "id=?", whereArgs: [id], limit: 1); // Cambié 'user' a 'user_app'
   }
 
-  static Future<int> updateUser(int id, String nombre, String? desc) async {
+  // Actualiza un usuario con la contraseña encriptada
+  static Future<int> updateUser(int id, String nombre, String? pass) async {
     final db = await SQLHelper.db();
+    final hashedPass = EncryptionHelper.hashPassword(pass!);
     final userApp = {
       'user_name': nombre,
-      'pass': desc,
+      'pass': hashedPass, // Guarda la contraseña encriptada
       'createdAT': DateTime.now().toString()
     };
-    
-    final id2 = await db.update(
+    return await db.update(
       'user_app',
       userApp,
       where: "id = ?",
       whereArgs: [id],
     );
-    return id2;
   }
 
   static Future<void> deleteUser(int id) async {
@@ -142,16 +159,17 @@ static Future<void> updateUserRole(int userId, String rol) async {
   }
 
 // Asigna un rol a un usuario en la tabla `rol_permiso`
-Future<void> assignRole(int userId, String rol) async {
-  final db = await SQLHelper.db();
-  await db.insert('rol_permiso', {
-    'userId': userId,
-    'rol': rol,
-  });
-}
+  Future<void> assignRole(int userId, String rol) async {
+    final db = await SQLHelper.db();
+    await db.insert('rol_permiso', {
+      'userId': userId,
+      'rol': rol,
+    });
+  }
 
 // Métodos para productos
-  static const urlProducto = "https://http2.mlstatic.com/D_NQ_NP_926115-MLA54902631714_042023-O.webp";
+  static const urlProducto =
+      "https://http2.mlstatic.com/D_NQ_NP_926115-MLA54902631714_042023-O.webp";
 
   static Future<List<Map<String, dynamic>>> getAllProductos() async {
     final db = await SQLHelper.db();
