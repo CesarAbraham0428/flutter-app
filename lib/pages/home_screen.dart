@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
+import 'package:flutter_application_2/mail_helper.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +27,74 @@ class _HomeScreenState extends State<HomeScreen> {
       _products = products;
       _isLoading = false;
     });
+  }
+
+    void _buyProduct(Map<String, dynamic> product) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController _quantityController = TextEditingController();
+        return AlertDialog(
+          title: Text('Comprar ${product['nombre_product']}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Cantidad disponible: ${product['cantidad_producto']}'),
+              TextField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Cantidad a comprar'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                int cantidadComprada = int.tryParse(_quantityController.text) ?? 0;
+                if (cantidadComprada > 0 && cantidadComprada <= product['cantidad_producto']) {
+
+                  double precioTotal = cantidadComprada.toDouble() * product['precio'];
+                  int nuevaCantidad = product['cantidad_producto'] - cantidadComprada;
+
+                  // Actualizar cantidad en la base de datos
+                  await SQLHelper.updateProducto(
+                    product['id'],
+                    product['nombre_product'],
+                    product['precio'],
+                    nuevaCantidad,
+                    product['imagen'],
+                  );
+
+                  // Enviar correo con detalles de la compra
+                  await MailHelper.send(
+                    product['nombre_product'],
+                    product['imagen'],
+                    cantidadComprada,
+                    precioTotal,
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Compra realizada con éxito. Se ha enviado un correo.')),
+                  );
+
+                  _fetchProducts(); // Refrescar la lista de productos
+                  Navigator.pop(context); // Cerrar el diálogo
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cantidad no válida')),
+                  );
+                }
+              },
+              child: const Text('Comprar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -73,9 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.shopping_cart),
-                          onPressed: () {
-                            // Aquí se maneja la compra del producto
-                          },
+                          onPressed: () => _buyProduct(product),
                         ),
                       );
                     },
