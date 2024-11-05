@@ -128,7 +128,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                 children: [
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Nombre del usuario'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nombre del usuario'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Ingrese el nombre del usuario';
@@ -138,7 +139,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   ),
                   TextFormField(
                     controller: _passController,
-                    decoration: const InputDecoration(labelText: 'Nueva Contraseña'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nueva Contraseña'),
                     obscureText: true,
                     onChanged: _validatePassword, // Validar en tiempo real
                     validator: (value) {
@@ -148,7 +150,10 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingrese una contraseña';
                       }
-                      if (!_hasMinLength || !_hasUpperCase || !_hasNumber || !_hasSpecialChar) {
+                      if (!_hasMinLength ||
+                          !_hasUpperCase ||
+                          !_hasNumber ||
+                          !_hasSpecialChar) {
                         return 'La contraseña no cumple con los requisitos';
                       }
                       return null;
@@ -194,7 +199,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                     value: _selectedRole,
                     decoration: const InputDecoration(labelText: 'Rol'),
                     items: const [
-                      DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
+                      DropdownMenuItem(
+                          value: 'usuario', child: Text('Usuario')),
                       DropdownMenuItem(value: 'admin', child: Text('Admin')),
                     ],
                     onChanged: (value) {
@@ -206,7 +212,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: _submitUser,
-                    child: Text(_isEditing ? 'Actualizar Usuario' : 'Agregar Usuario'),
+                    child: Text(
+                        _isEditing ? 'Actualizar Usuario' : 'Agregar Usuario'),
                   ),
                 ],
               ),
@@ -219,7 +226,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text('Rol: ${user['rol']}'),
+                    subtitle: Text(
+                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
