@@ -7,7 +7,7 @@ class Inactividad {
   Inactividad._internal();
 
   Timer? _inactividadContador;
-  final int _tiempoFuera = 1000; // se pone en segundos
+  final int _tiempoFuera = 20; // se pone en segundos
 
   void initialize(BuildContext context) {
     _resetTimer(context);

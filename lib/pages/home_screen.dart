@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/mail_helper.dart';
-import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,18 +17,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchProducts();
-    Inactividad().initialize(context);
   }
 
   Future<void> _fetchProducts() async {
     final products = await SQLHelper.getAllProductos();
-    setState(() {
-      _products = products;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    }
   }
 
-    void _buyProduct(Map<String, dynamic> product) {
+  void _buyProduct(Map<String, dynamic> product) {
     showDialog(
       context: context,
       builder: (context) {
@@ -56,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 int cantidadComprada = int.tryParse(_quantityController.text) ?? 0;
                 if (cantidadComprada > 0 && cantidadComprada <= product['cantidad_producto']) {
-
                   double precioTotal = cantidadComprada.toDouble() * product['precio'];
                   int nuevaCantidad = product['cantidad_producto'] - cantidadComprada;
 
@@ -77,16 +76,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     precioTotal,
                   );
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Compra realizada con éxito. Se ha enviado un correo.')),
-                  );
+                  if (mounted) { // Verificación antes de acceder al contexto
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Compra realizada con éxito. Se ha enviado un correo.')),
+                    );
+                    Navigator.pop(context); // Cerrar el diálogo
+                  }
 
                   _fetchProducts(); // Refrescar la lista de productos
-                  Navigator.pop(context); // Cerrar el diálogo
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cantidad no válida')),
-                  );
+                  if (mounted) { // Verificación antes de acceder al contexto
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Cantidad no válida')),
+                    );
+                  }
                 }
               },
               child: const Text('Comprar'),
@@ -99,55 +102,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Detectar interacciones y reiniciar el temporizador de inactividad
-        Inactividad().userInteractionDetected(context);
-      },
-      child: Scaffold(
-        backgroundColor: const Color.fromRGBO(185, 170, 245, 1),
-        appBar: AppBar(
-          title: const Text("Catálogo de Productos"),
-          backgroundColor: const Color.fromARGB(255, 231, 221, 188),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ),
-          ],
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _products.isEmpty
-                ? const Center(child: Text('No hay productos disponibles'))
-                : ListView.builder(
-                    itemCount: _products.length,
-                    itemBuilder: (context, index) {
-                      final product = _products[index];
-                      return ListTile(
-                        contentPadding: const EdgeInsets.all(10),
-                        leading: Image.network(
-                          product['imagen'],
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 50),
-                        ),
-                        title: Text(product['nombre_product']),
-                        subtitle: Text(
-                          'Precio: \$${product['precio']}  |  Cantidad: ${product['cantidad_producto']}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.shopping_cart),
-                          onPressed: () => _buyProduct(product),
-                        ),
-                      );
-                    },
-                  ),
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(185, 170, 245, 1),
+      appBar: AppBar(
+        title: const Text("Catálogo de Productos"),
+        backgroundColor: const Color.fromARGB(255, 231, 221, 188),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _products.isEmpty
+              ? const Center(child: Text('No hay productos disponibles'))
+              : ListView.builder(
+                  itemCount: _products.length,
+                  itemBuilder: (context, index) {
+                    final product = _products[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.all(10),
+                      leading: Image.network(
+                        product['imagen'],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image, size: 50),
+                      ),
+                      title: Text(product['nombre_product']),
+                      subtitle: Text(
+                        'Precio: \$${product['precio']}  |  Cantidad: ${product['cantidad_producto']}',
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.shopping_cart),
+                        onPressed: () => _buyProduct(product),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }

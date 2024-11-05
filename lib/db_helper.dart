@@ -1,8 +1,6 @@
 //lib/db_helper.dart
-import 'dart:ffi';
 import 'package:flutter_application_2/encyption_helper.dart';
 import 'package:sqflite/sqflite.dart' as sql;
-import 'package:crypto/crypto.dart'; // Importa el paquete crypto
 
 class SQLHelper {
   static Future<void> createTables(sql.Database database) async {

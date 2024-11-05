@@ -12,9 +12,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
-  String _selectedRole = 'usuario'; // Rol predeterminado
+  String _selectedRole = 'usuario';
   bool _isEditing = false;
   int? _editingUserId;
+  bool _hasMinLength = false;
+  bool _hasUpperCase = false;
+  bool _hasNumber = false;
+  bool _hasSpecialChar = false;
 
   List<Map<String, dynamic>> _users = [];
 
@@ -38,6 +42,15 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
     setState(() {
       _users = userList;
+    });
+  }
+
+  void _validatePassword(String password) {
+    setState(() {
+      _hasMinLength = password.length >= 8;
+      _hasUpperCase = password.contains(RegExp(r'[A-Z]'));
+      _hasNumber = password.contains(RegExp(r'\d'));
+      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
     });
   }
 
@@ -75,9 +88,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     _nameController.clear();
     _passController.clear();
     setState(() {
-      _selectedRole = 'usuario'; // Restablece el rol predeterminado
+      _selectedRole = 'usuario';
       _isEditing = false;
       _editingUserId = null;
+      _hasMinLength = false;
+      _hasUpperCase = false;
+      _hasNumber = false;
+      _hasSpecialChar = false;
     });
   }
 
@@ -88,7 +105,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       _nameController.text = user['user_name'];
       _passController.clear(); // No mostramos la contraseña en el formulario
       List<String> roles = await SQLHelper().getPermissionsForUser(user['id']);
-      _selectedRole = roles.isNotEmpty ? roles[0] : 'usuario'; // Establece el rol correcto
+      _selectedRole = roles.isNotEmpty ? roles[0] : 'usuario';
     });
   }
 
@@ -123,6 +140,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                     controller: _passController,
                     decoration: const InputDecoration(labelText: 'Nueva Contraseña'),
                     obscureText: true,
+                    onChanged: _validatePassword, // Validar en tiempo real
                     validator: (value) {
                       if (_isEditing && (value == null || value.isEmpty)) {
                         return null; // La contraseña puede ser vacía si no se quiere cambiar
@@ -130,9 +148,48 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Ingrese una contraseña';
                       }
+                      if (!_hasMinLength || !_hasUpperCase || !_hasNumber || !_hasSpecialChar) {
+                        return 'La contraseña no cumple con los requisitos';
+                      }
                       return null;
                     },
                   ),
+                  const SizedBox(height: 10),
+                  // Pie de página con los requisitos de la contraseña
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Requisitos de la contraseña:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '• Al menos 8 caracteres',
+                        style: TextStyle(
+                          color: _hasMinLength ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      Text(
+                        '• Al menos una letra mayúscula',
+                        style: TextStyle(
+                          color: _hasUpperCase ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      Text(
+                        '• Al menos un número',
+                        style: TextStyle(
+                          color: _hasNumber ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      Text(
+                        '• Al menos un carácter especial (!@#\$%^&*)',
+                        style: TextStyle(
+                          color: _hasSpecialChar ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
                     value: _selectedRole,
                     decoration: const InputDecoration(labelText: 'Rol'),
@@ -162,9 +219,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text(
-                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}',
-                    ),
+                    subtitle: Text('Rol: ${user['rol']}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
