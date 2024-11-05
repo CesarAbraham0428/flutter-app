@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/mail_helper.dart';
+import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -17,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchProducts();
+    Inactividad().initialize(context);
   }
 
   Future<void> _fetchProducts() async {
