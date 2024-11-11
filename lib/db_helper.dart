@@ -8,6 +8,7 @@ class SQLHelper {
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     user_name TEXT,
     pass TEXT,
+    email TEXT,
     createdAT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""");
 
@@ -35,12 +36,13 @@ class SQLHelper {
     });
   }
 
-  static Future<int> createUser(String user, String? pass) async {
+  static Future<int> createUser(String user, String email, String? pass) async {
     final db = await SQLHelper.db();
     final hashedPass =
         EncryptionHelper.hashPassword(pass!); // Encripta la contraseña
     final userApp = {
       'user_name': user,
+      'email': email,
       'pass': hashedPass, // Guarda la contraseña encriptada
     };
     int userId = await db.insert('user_app', userApp,
@@ -54,12 +56,13 @@ class SQLHelper {
     return userId;
   }
 
-  static Future<int> createAdminUser(String user, String pass) async {
+  static Future<int> createAdminUser(String user, String email, String pass) async {
     final db = await SQLHelper.db();
 
     // Inserta el usuario en la tabla `user_app`
     final userApp = {
       'user_name': user,
+      'email': email,
       'pass': pass,
     };
     int userId = await db.insert('user_app', userApp,
@@ -97,7 +100,7 @@ class SQLHelper {
 
   static Future<List<Map<String, dynamic>>> getAllUser() async {
     final db = await SQLHelper.db();
-    return db.query('user_app', orderBy: 'id'); // Cambié 'user' a 'user_app'
+    return db.query('user_app', orderBy: 'id'); 
   }
 
 // Actualiza el rol de un usuario existente en la tabla `rol_permiso`
@@ -128,15 +131,16 @@ static Future<void> updateAdminPassword() async {
   static Future<List<Map<String, dynamic>>> getSingleUser(int id) async {
     final db = await SQLHelper.db();
     return db.query('user_app',
-        where: "id=?", whereArgs: [id], limit: 1); // Cambié 'user' a 'user_app'
+        where: "id=?", whereArgs: [id], limit: 1); 
   }
 
   // Actualiza un usuario con la contraseña encriptada
-  static Future<int> updateUser(int id, String nombre, String? pass) async {
+  static Future<int> updateUser(int id, String nombre, String email, String? pass) async {
     final db = await SQLHelper.db();
     final hashedPass = EncryptionHelper.hashPassword(pass!);
     final userApp = {
       'user_name': nombre,
+      'email': email,
       'pass': hashedPass, // Guarda la contraseña encriptada
       'createdAT': DateTime.now().toString()
     };
@@ -166,8 +170,6 @@ static Future<void> updateAdminPassword() async {
   }
 
 // Métodos para productos
-  static const urlProducto =
-      "https://http2.mlstatic.com/D_NQ_NP_926115-MLA54902631714_042023-O.webp";
 
   static Future<List<Map<String, dynamic>>> getAllProductos() async {
     final db = await SQLHelper.db();

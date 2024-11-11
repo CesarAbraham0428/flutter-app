@@ -12,6 +12,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   String _selectedRole = 'usuario';
   bool _isEditing = false;
   int? _editingUserId;
@@ -63,6 +64,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
             _editingUserId!,
             _nameController.text,
             _passController.text,
+            _emailController.text,
           );
         }
 
@@ -73,6 +75,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
         int userId = await SQLHelper.createUser(
           _nameController.text,
           _passController.text,
+          _emailController.text,
         );
 
         // Asigna el rol
@@ -87,6 +90,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   void _clearForm() {
     _nameController.clear();
     _passController.clear();
+    _emailController.clear();
     setState(() {
       _selectedRole = 'usuario';
       _isEditing = false;
@@ -103,6 +107,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       _isEditing = true;
       _editingUserId = user['id'];
       _nameController.text = user['user_name'];
+      _emailController.text = user['email'];
       _passController.clear(); // No mostramos la contraseña en el formulario
       List<String> roles = await SQLHelper().getPermissionsForUser(user['id']);
       _selectedRole = roles.isNotEmpty ? roles[0] : 'usuario';
@@ -137,6 +142,22 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       return null;
                     },
                   ),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration:
+                        const InputDecoration(labelText: 'Correo del usuario'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ingrese el correo del usuario';
+                      }
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Ingrese un correo válido';
+                      }
+                      return null;
+                    },
+                  ),
+
                   TextFormField(
                     controller: _passController,
                     decoration:
@@ -227,7 +248,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   return ListTile(
                     title: Text(user['user_name']),
                     subtitle: Text(
-                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}',
+                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}\nCorreo eléctronico: ${user['email']}',
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

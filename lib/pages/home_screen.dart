@@ -1,10 +1,12 @@
+//lib/pages/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/mail_helper.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final int userId; // ID del usuario actual
+  const HomeScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -13,12 +15,23 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _products = [];
+  String? userEmail;
 
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+    _getUserEmail();
     Inactividad().initialize(context);
+  }
+
+  // Obtiene el correo del usuario desde la base de datos
+  Future<void> _getUserEmail() async {
+    List<Map<String, dynamic>> user =
+        await SQLHelper.getSingleUser(widget.userId);
+    setState(() {
+      userEmail = user.isNotEmpty ? user.first['email'] : null;
+    });
   }
 
   Future<void> _fetchProducts() async {
@@ -35,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        final TextEditingController _quantityController = TextEditingController();
+        final TextEditingController _quantityController =
+            TextEditingController();
         return AlertDialog(
           title: Text('Comprar ${product['nombre_product']}'),
           content: Column(
@@ -44,7 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('Cantidad disponible: ${product['cantidad_producto']}'),
               TextField(
                 controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Cantidad a comprar'),
+                decoration:
+                    const InputDecoration(labelText: 'Cantidad a comprar'),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -56,10 +71,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () async {
-                int cantidadComprada = int.tryParse(_quantityController.text) ?? 0;
-                if (cantidadComprada > 0 && cantidadComprada <= product['cantidad_producto']) {
-                  double precioTotal = cantidadComprada.toDouble() * product['precio'];
-                  int nuevaCantidad = product['cantidad_producto'] - cantidadComprada;
+                int cantidadComprada =
+                    int.tryParse(_quantityController.text) ?? 0;
+                if (cantidadComprada > 0 &&
+                    cantidadComprada <= product['cantidad_producto']) {
+                  double precioTotal =
+                      cantidadComprada.toDouble() * product['precio'];
+                  int nuevaCantidad =
+                      product['cantidad_producto'] - cantidadComprada;
 
                   // Actualizar cantidad en la base de datos
                   await SQLHelper.updateProducto(
@@ -71,23 +90,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
 
                   // Enviar correo con detalles de la compra
-                  await MailHelper.send(
-                    product['nombre_product'],
-                    product['imagen'],
-                    cantidadComprada,
-                    precioTotal,
-                  );
-
-                  if (mounted) { // Verificación antes de acceder al contexto
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Compra realizada con éxito. Se ha enviado un correo.')),
+                  if (userEmail != null) {
+                    await MailHelper.send(
+                      product['nombre_product'],
+                      product['imagen'],
+                      cantidadComprada,
+                      precioTotal,
+                      userEmail!, // Correo del usuario
                     );
-                    Navigator.pop(context); // Cerrar el diálogo
+
+                    if (mounted) {
+                      // Verificación antes de acceder al contexto
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Compra realizada con éxito. Se ha enviado un correo.')),
+                      );
+                      Navigator.pop(context); // Cerrar el diálogo
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('No se pudo obtener el correo del usuario')),
+                    );
                   }
 
                   _fetchProducts(); // Refrescar la lista de productos
                 } else {
-                  if (mounted) { // Verificación antes de acceder al contexto
+                  if (mounted) {
+                    // Verificación antes de acceder al contexto
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Cantidad no válida')),
                     );

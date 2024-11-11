@@ -1,6 +1,7 @@
 //lib/login_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -13,6 +14,28 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+ Future<void> _login() async {
+    String username = _usernameController.text;
+    String password = _passwordController.text;
+    
+    // Verificar las credenciales
+    final user = await SQLHelper.login_user(username, password);
+    if (user != null) {
+      int userId = user['id'];
+      
+      // Guardar el userId en SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userId', userId);
+
+      // Navegar a HomeScreen después de iniciar sesión
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Credenciales incorrectas')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +68,12 @@ class _LoginPageState extends State<LoginPage> {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submit,
                 child: Text('Iniciar sesión'),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');

@@ -12,6 +12,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   bool _hasMinLength = false;
   bool _hasUpperCase = false;
   bool _hasNumber = false;
@@ -33,6 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
         int userId = await SQLHelper.createUser(
           _usernameController.text,
           _passwordController.text,
+          _emailController.text,
         );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Usuario registrado con ID: $userId')),
@@ -68,6 +70,22 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               ),
               TextFormField(
+                controller: _emailController,
+                decoration:
+                    const InputDecoration(labelText: 'Correo electrónico'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ingrese un correo electrónico';
+                  }
+                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                  if (!emailRegex.hasMatch(value)) {
+                    return 'Ingrese un correo válido';
+                  }
+                  return null;
+                },
+              ),
+
+              TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Contraseña'),
                 obscureText: true,
@@ -76,7 +94,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   if (value == null || value.isEmpty) {
                     return 'Ingresa tu contraseña';
                   }
-                  if (!_hasMinLength || !_hasUpperCase || !_hasNumber || !_hasSpecialChar) {
+                  if (!_hasMinLength ||
+                      !_hasUpperCase ||
+                      !_hasNumber ||
+                      !_hasSpecialChar) {
                     return 'La contraseña no cumple con los requisitos';
                   }
                   return null;
@@ -87,7 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Requisitos de la contraseña:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
