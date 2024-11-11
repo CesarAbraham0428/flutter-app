@@ -11,8 +11,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _hasMinLength = false;
   bool _hasUpperCase = false;
   bool _hasNumber = false;
@@ -33,8 +33,8 @@ class _RegisterPageState extends State<RegisterPage> {
       try {
         int userId = await SQLHelper.createUser(
           _usernameController.text,
-          _passwordController.text,
           _emailController.text,
+          _passwordController.text,
         );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Usuario registrado con ID: $userId')),

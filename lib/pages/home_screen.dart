@@ -31,6 +31,12 @@ class _HomeScreenState extends State<HomeScreen> {
         await SQLHelper.getSingleUser(widget.userId);
     setState(() {
       userEmail = user.isNotEmpty ? user.first['email'] : null;
+      if (userEmail == null ||
+          userEmail!.isEmpty ||
+          !userEmail!.contains('@')) {
+        // Si el correo no es válido, mostrar un mensaje de error en consola para depurar
+        print("Correo electrónico del usuario no válido o no encontrado.");
+      }
     });
   }
 
@@ -96,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       product['imagen'],
                       cantidadComprada,
                       precioTotal,
-                      userEmail!, // Correo del usuario
+                      userEmail!, // El correo del usuario se obtiene de la base de datos
                     );
 
                     if (mounted) {

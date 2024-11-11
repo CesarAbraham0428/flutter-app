@@ -7,8 +7,8 @@ class SQLHelper {
     await database.execute("""CREATE TABLE user_app(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     user_name TEXT,
-    pass TEXT,
     email TEXT,
+    pass TEXT,
     createdAT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""");
 
@@ -43,7 +43,8 @@ class SQLHelper {
     final userApp = {
       'user_name': user,
       'email': email,
-      'pass': hashedPass, // Guarda la contraseña encriptada
+      'pass':
+          hashedPass, // Guarda la contraseña encriptada en el campo correcto
     };
     int userId = await db.insert('user_app', userApp,
         conflictAlgorithm: sql.ConflictAlgorithm.replace);
@@ -56,21 +57,21 @@ class SQLHelper {
     return userId;
   }
 
-  static Future<int> createAdminUser(String user, String email, String pass) async {
+  static Future<int> createAdminUser(
+      String user, String email, String pass) async {
     final db = await SQLHelper.db();
+    final hashedPass =
+        EncryptionHelper.hashPassword(pass); // Encripta la contraseña
 
-    // Inserta el usuario en la tabla `user_app`
     final userApp = {
       'user_name': user,
       'email': email,
-      'pass': pass,
+      'pass': hashedPass, // Guarda la contraseña encriptada
     };
     int userId = await db.insert('user_app', userApp,
         conflictAlgorithm: sql.ConflictAlgorithm.replace);
 
-    // Asigna el rol de administrador en la tabla `rol_permiso`
     await db.insert('rol_permiso', {'userId': userId, 'rol': 'admin'});
-
     return userId;
   }
 
@@ -100,42 +101,43 @@ class SQLHelper {
 
   static Future<List<Map<String, dynamic>>> getAllUser() async {
     final db = await SQLHelper.db();
-    return db.query('user_app', orderBy: 'id'); 
+    return db.query('user_app', orderBy: 'id');
   }
 
 // Actualiza el rol de un usuario existente en la tabla `rol_permiso`
-static Future<void> updateUserRole(int userId, String rol) async {
-  final db = await SQLHelper.db();
-  
-  // Elimina el rol existente
-  await db.delete('rol_permiso', where: 'userId = ?', whereArgs: [userId]);
-  
-  // Inserta el nuevo rol
-  await db.insert('rol_permiso', {
-    'userId': userId,
-    'rol': rol,
-  });
-}
+  static Future<void> updateUserRole(int userId, String rol) async {
+    final db = await SQLHelper.db();
 
-static Future<void> updateAdminPassword() async {
-  final db = await SQLHelper.db();
-  final hashedPass = EncryptionHelper.hashPassword("hola"); // Encripta la contraseña "hola"
-  await db.update(
-    'user_app',
-    {'pass': hashedPass},
-    where: 'user_name = ?',
-    whereArgs: ['cesar'],
-  );
-}
+    // Elimina el rol existente
+    await db.delete('rol_permiso', where: 'userId = ?', whereArgs: [userId]);
+
+    // Inserta el nuevo rol
+    await db.insert('rol_permiso', {
+      'userId': userId,
+      'rol': rol,
+    });
+  }
+
+  static Future<void> updateAdminPassword() async {
+    final db = await SQLHelper.db();
+    final hashedPass =
+        EncryptionHelper.hashPassword("hola"); // Encripta la contraseña "hola"
+    await db.update(
+      'user_app',
+      {'pass': hashedPass},
+      where: 'user_name = ?',
+      whereArgs: ['cesar'],
+    );
+  }
 
   static Future<List<Map<String, dynamic>>> getSingleUser(int id) async {
     final db = await SQLHelper.db();
-    return db.query('user_app',
-        where: "id=?", whereArgs: [id], limit: 1); 
+    return db.query('user_app', where: "id=?", whereArgs: [id], limit: 1);
   }
 
   // Actualiza un usuario con la contraseña encriptada
-  static Future<int> updateUser(int id, String nombre, String email, String? pass) async {
+  static Future<int> updateUser(
+      int id, String nombre, String email, String? pass) async {
     final db = await SQLHelper.db();
     final hashedPass = EncryptionHelper.hashPassword(pass!);
     final userApp = {

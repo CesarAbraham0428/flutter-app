@@ -1,3 +1,4 @@
+//lib\cruds\usuarios_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 
@@ -247,8 +248,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle:
-                        Text('Correo: ${user['email']}\nContraseña: ${user['pass']}\nRol: ${user['rol']}'),
+                    subtitle: Text(
+                      'Correo: ${user['email']}\nContraseña: ${user['pass']}\nRol: ${user['rol']}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
