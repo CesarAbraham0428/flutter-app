@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
- Future<void> _login() async {
+  Future<void> _login() async {
     String username = _usernameController.text;
     String password = _passwordController.text;
     
@@ -23,13 +23,18 @@ class _LoginPageState extends State<LoginPage> {
     final user = await SQLHelper.login_user(username, password);
     if (user != null) {
       int userId = user['id'];
-      
+
       // Guardar el userId en SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('userId', userId);
 
-      // Navegar a HomeScreen después de iniciar sesión
-      Navigator.pushReplacementNamed(context, '/home');
+      // Verificar rol del usuario para redirigir correctamente
+      List<String> roles = await SQLHelper().getPermissionsForUser(userId);
+      if (roles.contains('admin')) {
+        Navigator.pushReplacementNamed(context, '/adminHome');
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Credenciales incorrectas')),
@@ -40,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+       appBar: AppBar(title: const Text('Iniciar Sesión')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -73,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: _submit,
                 child: Text('Iniciar sesión'),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');

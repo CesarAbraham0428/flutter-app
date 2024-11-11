@@ -11,8 +11,8 @@ class UsuariosScreen extends StatefulWidget {
 class _UsuariosScreenState extends State<UsuariosScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _passController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passController = TextEditingController();
   String _selectedRole = 'usuario';
   bool _isEditing = false;
   int? _editingUserId;
@@ -63,8 +63,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
           await SQLHelper.updateUser(
             _editingUserId!,
             _nameController.text,
-            _passController.text,
             _emailController.text,
+            _passController.text,
           );
         }
 
@@ -74,8 +74,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
         // Crea un nuevo usuario con la contraseña encriptada
         int userId = await SQLHelper.createUser(
           _nameController.text,
-          _passController.text,
           _emailController.text,
+          _passController.text,
         );
 
         // Asigna el rol
@@ -89,8 +89,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   void _clearForm() {
     _nameController.clear();
-    _passController.clear();
     _emailController.clear();
+    _passController.clear();
     setState(() {
       _selectedRole = 'usuario';
       _isEditing = false;
@@ -247,9 +247,8 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   final user = _users[index];
                   return ListTile(
                     title: Text(user['user_name']),
-                    subtitle: Text(
-                      'Rol: ${user['rol']}\nContraseña encriptada: ${user['pass']}\nCorreo eléctronico: ${user['email']}',
-                    ),
+                    subtitle:
+                        Text('Correo: ${user['email']}\nContraseña: ${user['pass']}\nRol: ${user['rol']}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
