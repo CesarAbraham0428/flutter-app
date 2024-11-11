@@ -17,7 +17,7 @@ Future<void> main() async {
     databaseFactory = databaseFactoryFfi; // Establece el `databaseFactory` global
   }
   // Actualiza la contraseña del administrador "cesar" a una versión encriptada
-  await SQLHelper.createAdminUser("cesar", "hola", "admin@gmail.com");
+  await SQLHelper.createAdminUser("cesar", "cesarabraham0428@gmail.com", "hola");
   await SQLHelper.updateAdminPassword();
   runApp(const MyApp());
 }
