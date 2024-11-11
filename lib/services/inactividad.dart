@@ -1,4 +1,4 @@
-// lib\services\inactividad.dart
+// lib/services/inactividad.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -21,12 +21,12 @@ class Inactividad {
     });
   }
 
-  void _logout(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/login');
+  void startTimer(BuildContext context) {
+    _resetTimer(context);
   }
 
-  void userInteractionDetected(BuildContext context) {
-    _resetTimer(context);
+  void _logout(BuildContext context) {
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   void dispose() {

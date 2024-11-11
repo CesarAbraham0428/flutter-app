@@ -22,7 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchProducts();
     _getUserEmail();
-    Inactividad().initialize(context); // Inicia el temporizador
+    Inactividad()
+        .initialize(context); // Inicia el temporizador al abrir HomeScreen
   }
 
   @override
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _buyProduct(Map<String, dynamic> product) {
-    Inactividad().dispose(); // Detiene el temporizador al comprar
+    Inactividad().startTimer(context); // Reinicia el temporizador en cada clic
     showDialog(
       context: context,
       builder: (context) {
@@ -111,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             content: Text(
                                 'Compra realizada con éxito. Se ha enviado un correo.')),
                       );
-                      Navigator.pop(context); // Cerrar el diálogo
+                      Navigator.pop(context); // Cierra el diálogo
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -121,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  _fetchProducts(); // Refrescar la lista de productos
+                  _fetchProducts(); // Refresca la lista de productos
                 } else {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
