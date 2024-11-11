@@ -1,3 +1,4 @@
+// lib\services\inactividad.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -7,7 +8,7 @@ class Inactividad {
   Inactividad._internal();
 
   Timer? _inactividadContador;
-  final int _tiempoFuera = 20; // se pone en segundos
+  final int _tiempoFuera = 20; // Tiempo de inactividad en segundos
 
   void initialize(BuildContext context) {
     _resetTimer(context);

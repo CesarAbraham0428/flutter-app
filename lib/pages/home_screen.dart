@@ -1,4 +1,4 @@
-//lib/pages/home_screen.dart
+// lib/pages/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/mail_helper.dart';
@@ -22,21 +22,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchProducts();
     _getUserEmail();
-    Inactividad().initialize(context);
+    Inactividad().initialize(context); // Inicia el temporizador
   }
 
-  // Obtiene el correo del usuario desde la base de datos
+  @override
+  void dispose() {
+    Inactividad().dispose();
+    super.dispose();
+  }
+
   Future<void> _getUserEmail() async {
     List<Map<String, dynamic>> user =
         await SQLHelper.getSingleUser(widget.userId);
     setState(() {
       userEmail = user.isNotEmpty ? user.first['email'] : null;
-      if (userEmail == null ||
-          userEmail!.isEmpty ||
-          !userEmail!.contains('@')) {
-        // Si el correo no es válido, mostrar un mensaje de error en consola para depurar
-        print("Correo electrónico del usuario no válido o no encontrado.");
-      }
     });
   }
 
@@ -51,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _buyProduct(Map<String, dynamic> product) {
+    Inactividad().dispose(); // Detiene el temporizador al comprar
     showDialog(
       context: context,
       builder: (context) {
@@ -102,11 +102,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       product['imagen'],
                       cantidadComprada,
                       precioTotal,
-                      userEmail!, // El correo del usuario se obtiene de la base de datos
+                      userEmail!,
                     );
 
                     if (mounted) {
-                      // Verificación antes de acceder al contexto
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text(
@@ -125,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _fetchProducts(); // Refrescar la lista de productos
                 } else {
                   if (mounted) {
-                    // Verificación antes de acceder al contexto
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Cantidad no válida')),
                     );
@@ -180,7 +178,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.shopping_cart),
-                        onPressed: () => _buyProduct(product),
+                        onPressed: () {
+                          _buyProduct(product);
+                        },
                       ),
                     );
                   },
