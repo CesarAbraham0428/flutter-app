@@ -104,6 +104,20 @@ class SQLHelper {
     return db.query('user_app', orderBy: 'id');
   }
 
+  static Future<String?> getUserEmail(int userId) async {
+    final db = await SQLHelper.db();
+    List<Map<String, dynamic>> result = await db.query(
+      'user_app', // Changed from 'user' to 'user_app'
+      where: 'id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      return result.first['email']; // Changed from 'correo' to 'email'
+    }
+    return null;
+  }
+
 // Actualiza el rol de un usuario existente en la tabla `rol_permiso`
   static Future<void> updateUserRole(int userId, String rol) async {
     final db = await SQLHelper.db();

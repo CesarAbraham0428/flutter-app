@@ -42,12 +42,16 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-       '/home': (context) =>const HomeScreen(),
+        '/home': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          final userId = args?['userId'] as int? ?? 0;
+          return HomeScreen(userId: userId);
+        },
         '/adminHome': (context) => const AdminHomeScreen(),
         '/manageProducts': (context) => const ProductosScreen(),
         '/manageUsers': (context) => const UsuariosScreen(),
       },
-
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,

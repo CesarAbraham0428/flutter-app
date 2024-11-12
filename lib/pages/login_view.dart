@@ -14,12 +14,13 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true; // Variable para controlar la visibilidad de la contraseña
+  bool _obscurePassword =
+      true; // Variable para controlar la visibilidad de la contraseña
 
   Future<void> _login() async {
     String username = _usernameController.text;
     String password = _passwordController.text;
-    
+
     // Verificar las credenciales
     final user = await SQLHelper.login_user(username, password);
     if (user != null) {
@@ -65,16 +66,20 @@ class _LoginPageState extends State<LoginPage> {
               ),
               TextFormField(
                 controller: _passwordController,
-                obscureText: _obscurePassword, // Usamos la variable para ocultar o mostrar la contraseña
+                obscureText:
+                    _obscurePassword, // Usamos la variable para ocultar o mostrar la contraseña
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
                       setState(() {
-                        _obscurePassword = !_obscurePassword; // Cambiar el estado de visibilidad
+                        _obscurePassword =
+                            !_obscurePassword; // Cambiar el estado de visibilidad
                       });
                     },
                   ),
@@ -118,12 +123,11 @@ class _LoginPageState extends State<LoginPage> {
 
         if (roles.contains('admin')) {
           Navigator.pushReplacementNamed(context, '/adminHome');
-        } else if (roles.contains('usuario')) {
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Rol no reconocido')),
-          );
+        }
+
+        if (roles.contains('usuario')) {
+          Navigator.pushReplacementNamed(context, '/home',
+              arguments: {'userId': userId});
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

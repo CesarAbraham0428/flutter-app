@@ -5,7 +5,8 @@ import 'package:flutter_application_2/mail_helper.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final int userId;
+  const HomeScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchProducts();
+    _loadUserEmail();
     Inactividad()
         .initialize(context); // Inicia el temporizador al abrir HomeScreen
   }
@@ -40,13 +42,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+Future<void> _loadUserEmail() async {
+    final email = await SQLHelper.getUserEmail(widget.userId);
+    setState(() {
+      userEmail = email;
+});
+}
+
 void _buyProduct(Map<String, dynamic> product) {
-  Inactividad().startTimer(context); // Reinicia el temporizador en cada clic
+  Inactividad().startTimer(context);
   showDialog(
     context: context,
     builder: (context) {
       final TextEditingController _quantityController = TextEditingController();
       final TextEditingController _emailController = TextEditingController();
+      
+      // Pre-fill email if available
+      if (userEmail != null) {
+        _emailController.text = userEmail!;
+      }
 
       return AlertDialog(
         title: Text('Comprar ${product['nombre_product']}'),
@@ -62,6 +76,7 @@ void _buyProduct(Map<String, dynamic> product) {
             const SizedBox(height: 10),
             TextField(
               controller: _emailController,
+              enabled: false, // Make it read-only since we're using user's email
               decoration: const InputDecoration(labelText: 'Correo electrónico'),
               keyboardType: TextInputType.emailAddress,
             ),
@@ -75,15 +90,13 @@ void _buyProduct(Map<String, dynamic> product) {
           TextButton(
             onPressed: () async {
               int cantidadComprada = int.tryParse(_quantityController.text) ?? 0;
-              String emailIngresado = _emailController.text.trim();
-
+              
               if (cantidadComprada > 0 &&
                   cantidadComprada <= product['cantidad_producto'] &&
-                  emailIngresado.isNotEmpty) {
+                  userEmail != null) {
                 double precioTotal = cantidadComprada.toDouble() * product['precio'];
                 int nuevaCantidad = product['cantidad_producto'] - cantidadComprada;
 
-                // Actualizar cantidad en la base de datos
                 await SQLHelper.updateProducto(
                   product['id'],
                   product['nombre_product'],
@@ -92,28 +105,28 @@ void _buyProduct(Map<String, dynamic> product) {
                   product['imagen'],
                 );
 
-                // Enviar correo con detalles de la compra
                 await MailHelper.send(
                   product['nombre_product'],
                   product['imagen'],
                   cantidadComprada,
                   precioTotal,
-                  emailIngresado,
+                  userEmail!, // Use the stored user email
                 );
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Compra realizada con éxito. Se ha enviado un correo.')),
+                      content: Text('Compra realizada con éxito. Se ha enviado un correo.'),
+                    ),
                   );
-                  Navigator.pop(context); // Cierra el diálogo
+                  Navigator.pop(context);
                 }
 
-                _fetchProducts(); // Refresca la lista de productos
+                _fetchProducts();
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cantidad no válida o correo faltante')),
+                    const SnackBar(content: Text('Cantidad no válida o correo no disponible')),
                   );
                 }
               }
@@ -125,7 +138,6 @@ void _buyProduct(Map<String, dynamic> product) {
     },
   );
 }
-
 
   @override
   Widget build(BuildContext context) {
