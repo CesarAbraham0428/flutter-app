@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true; // Variable para controlar la visibilidad de la contraseña
 
   Future<void> _login() async {
     String username = _usernameController.text;
@@ -45,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: AppBar(title: const Text('Iniciar Sesión')),
+      appBar: AppBar(title: const Text('Iniciar Sesión')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -64,8 +65,20 @@ class _LoginPageState extends State<LoginPage> {
               ),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
+                obscureText: _obscurePassword, // Usamos la variable para ocultar o mostrar la contraseña
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword; // Cambiar el estado de visibilidad
+                      });
+                    },
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese su contraseña';
@@ -76,14 +89,14 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submit,
-                child: Text('Iniciar sesión'),
+                child: const Text('Iniciar sesión'),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/register');
                 },
-                child: Text('¿No tienes cuenta? Regístrate'),
+                child: const Text('¿No tienes cuenta? Regístrate'),
               ),
             ],
           ),
@@ -92,31 +105,31 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-void _submit() async {
-  if (_formKey.currentState!.validate()) {
-    Map<String, dynamic>? user = await SQLHelper.login_user(
-      _usernameController.text,
-      _passwordController.text,
-    );
+  void _submit() async {
+    if (_formKey.currentState!.validate()) {
+      Map<String, dynamic>? user = await SQLHelper.login_user(
+        _usernameController.text,
+        _passwordController.text,
+      );
 
-    if (user != null) {
-      int userId = user['id'];
-      List<String> roles = await SQLHelper().getPermissionsForUser(userId);
+      if (user != null) {
+        int userId = user['id'];
+        List<String> roles = await SQLHelper().getPermissionsForUser(userId);
 
-      if (roles.contains('admin')) {
-        Navigator.pushReplacementNamed(context, '/adminHome');
-      } else if (roles.contains('usuario')) {
-        Navigator.pushReplacementNamed(context, '/home');
+        if (roles.contains('admin')) {
+          Navigator.pushReplacementNamed(context, '/adminHome');
+        } else if (roles.contains('usuario')) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rol no reconocido')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rol no reconocido')),
+          const SnackBar(content: Text('Usuario o contraseña incorrectos')),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuario o contraseña incorrectos')),
-      );
     }
   }
-}
 }

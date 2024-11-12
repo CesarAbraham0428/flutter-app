@@ -1,4 +1,4 @@
-//lib\cruds\usuarios_screen.dart
+//lib/cruds/usuarios_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 
@@ -14,9 +14,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+
   String _selectedRole = 'usuario';
   bool _isEditing = false;
   int? _editingUserId;
+  bool _obscurePassword = true; // Controla la visibilidad de la contraseña
   bool _hasMinLength = false;
   bool _hasUpperCase = false;
   bool _hasNumber = false;
@@ -96,6 +98,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       _selectedRole = 'usuario';
       _isEditing = false;
       _editingUserId = null;
+      _obscurePassword = true;
       _hasMinLength = false;
       _hasUpperCase = false;
       _hasNumber = false;
@@ -158,13 +161,23 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       return null;
                     },
                   ),
-
                   TextFormField(
                     controller: _passController,
-                    decoration:
-                        const InputDecoration(labelText: 'Nueva Contraseña'),
-                    obscureText: true,
+                    obscureText: _obscurePassword, // Usamos _obscurePassword
                     onChanged: _validatePassword, // Validar en tiempo real
+                    decoration: InputDecoration(
+                      labelText: 'Nueva Contraseña',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword; // Alternar visibilidad
+                          });
+                        },
+                      ),
+                    ),
                     validator: (value) {
                       if (_isEditing && (value == null || value.isEmpty)) {
                         return null; // La contraseña puede ser vacía si no se quiere cambiar
@@ -249,7 +262,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   return ListTile(
                     title: Text(user['user_name']),
                     subtitle: Text(
-                      'Correo: ${user['email']}\nContraseña: ${user['pass']}\nRol: ${user['rol']}',
+                      'Correo: ${user['email']}\nRol: ${user['rol']}',
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

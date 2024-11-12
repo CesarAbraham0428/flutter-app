@@ -13,6 +13,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  bool _obscurePassword = true; // Controla la visibilidad de la contraseña
   bool _hasMinLength = false;
   bool _hasUpperCase = false;
   bool _hasNumber = false;
@@ -24,7 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _hasMinLength = password.length >= 8;
       _hasUpperCase = password.contains(RegExp(r'[A-Z]'));
       _hasNumber = password.contains(RegExp(r'\d'));
-      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      _hasSpecialChar = password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
     });
   }
 
@@ -84,12 +86,23 @@ class _RegisterPageState extends State<RegisterPage> {
                   return null;
                 },
               ),
-
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
+                obscureText: _obscurePassword, // Usamos _obscurePassword
                 onChanged: _validatePassword, // Validar en tiempo real
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword; // Alternar visibilidad
+                      });
+                    },
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Ingresa tu contraseña';
