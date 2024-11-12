@@ -5,27 +5,23 @@ import 'package:flutter_application_2/pages/home_screen.dart';
 import 'package:flutter_application_2/pages/login_view.dart';
 import 'package:flutter_application_2/pages/register_view.dart';
 import 'package:flutter_application_2/pages/admin_home_screen.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Importa la biblioteca para soporte FFI
 import 'package:flutter_application_2/cruds/productos_screen.dart';
 import 'package:flutter_application_2/cruds/usuarios_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> main() async {
-  // Verifica si estás en un entorno de escritorio y configúralo
-  if (isDesktop()) {
-    sqfliteFfiInit(); // Inicializa FFI
-    databaseFactory = databaseFactoryFfi; // Establece el `databaseFactory` global
-  }
-  // Actualiza la contraseña del administrador "cesar" a una versión encriptada
-  await SQLHelper.createAdminUser("cesar", "cesarabraham0428@gmail.com", "hola");
-  await SQLHelper.updateAdminPassword();
-  runApp(const MyApp());
-}
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-bool isDesktop() {
-  // Función para verificar si estamos en un entorno de escritorio
-  return !identical(
-      0, 0.0); // Hack para detectar si se ejecuta en Flutter Desktop
+  try {
+    // Realiza la inicialización de la base de datos en Android/iOS sin `sqflite_common_ffi`
+    await SQLHelper.createAdminUser(
+        "cesar", "cesarabraham0428@gmail.com", "hola");
+    await SQLHelper.updateAdminPassword();
+
+    runApp(const MyApp());
+  } catch (e) {
+    print('Error en la inicialización de la app: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -46,18 +42,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-       '/home': (context) => FutureBuilder<int?>(
-              future: _getUserId(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator(); // Pantalla de carga
-                } else if (snapshot.hasData && snapshot.data != null) {
-                  return HomeScreen(userId: snapshot.data!);
-                } else {
-                  return const LoginPage(); // Si no hay userId, redirige a login
-                }
-              },
-            ),
+       '/home': (context) =>const HomeScreen(),
         '/adminHome': (context) => const AdminHomeScreen(),
         '/manageProducts': (context) => const ProductosScreen(),
         '/manageUsers': (context) => const UsuariosScreen(),

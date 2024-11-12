@@ -5,8 +5,7 @@ import 'package:flutter_application_2/mail_helper.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
-  final int userId; // ID del usuario actual
-  const HomeScreen({Key? key, required this.userId}) : super(key: key);
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -21,7 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchProducts();
-    _getUserEmail();
     Inactividad()
         .initialize(context); // Inicia el temporizador al abrir HomeScreen
   }
@@ -30,14 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     Inactividad().dispose();
     super.dispose();
-  }
-
-  Future<void> _getUserEmail() async {
-    List<Map<String, dynamic>> user =
-        await SQLHelper.getSingleUser(widget.userId);
-    setState(() {
-      userEmail = user.isNotEmpty ? user.first['email'] : null;
-    });
   }
 
   Future<void> _fetchProducts() async {
