@@ -38,7 +38,7 @@ class SQLHelper {
     FOREIGN KEY (productId) REFERENCES producto_app (id) ON DELETE CASCADE
     )""");
   }
-  
+
   static Future<sql.Database> db() async {
     return sql.openDatabase("database_name.db", version: 2,
         onCreate: (sql.Database database, int version) async {
@@ -68,6 +68,35 @@ class SQLHelper {
   static Future<void> clearCart() async {
     final db = await SQLHelper.db();
     await db.delete('carrito');
+  }
+
+  // Nueva función para verificar la cantidad de un producto específico en el carrito
+  static Future<List<Map<String, dynamic>>> getCartItemsForProduct(int productId) async {
+    final db = await SQLHelper.db();
+    return db.query(
+      'carrito',
+      where: 'productId = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  // Nueva función para eliminar un producto específico del carrito
+  static Future<void> removeFromCart(int productId) async {
+    final db = await SQLHelper.db();
+    await db.delete(
+      'carrito',
+      where: 'productId = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  // Nueva función para actualizar el stock del producto en la tabla de inventario
+  static Future<void> updateProductStock(int productId, int cantidadComprada) async {
+    final db = await SQLHelper.db();
+    await db.rawUpdate(
+      'UPDATE producto_app SET cantidad_producto = cantidad_producto - ? WHERE id = ?',
+      [cantidadComprada, productId],
+    );
   }
 
   //Métodos para el usuario
@@ -121,7 +150,7 @@ class SQLHelper {
     });
   }
 
-// Verifica las credenciales de inicio de sesión con la contraseña encriptada
+  // Verifica las credenciales de inicio de sesión con la contraseña encriptada
   static Future<Map<String, dynamic>?> login_user(
       String nombre, String pass) async {
     final db = await SQLHelper.db();
@@ -143,18 +172,18 @@ class SQLHelper {
   static Future<String?> getUserEmail(int userId) async {
     final db = await SQLHelper.db();
     List<Map<String, dynamic>> result = await db.query(
-      'user_app', // Changed from 'user' to 'user_app'
+      'user_app',
       where: 'id = ?',
       whereArgs: [userId],
       limit: 1,
     );
     if (result.isNotEmpty) {
-      return result.first['email']; // Changed from 'correo' to 'email'
+      return result.first['email'];
     }
     return null;
   }
 
-// Actualiza el rol de un usuario existente en la tabla `rol_permiso`
+  // Actualiza el rol de un usuario existente en la tabla `rol_permiso`
   static Future<void> updateUserRole(int userId, String rol) async {
     final db = await SQLHelper.db();
 
@@ -193,7 +222,7 @@ class SQLHelper {
     final userApp = {
       'user_name': nombre,
       'email': email,
-      'pass': hashedPass, // Guarda la contraseña encriptada
+      'pass': hashedPass,
       'createdAT': DateTime.now().toString()
     };
     return await db.update(
@@ -208,11 +237,11 @@ class SQLHelper {
     final db = await SQLHelper.db();
     try {
       await db.delete('user_app',
-          where: "id = ?", whereArgs: [id]); // Cambié 'user' a 'user_app'
+          where: "id = ?", whereArgs: [id]);
     } catch (e) {}
   }
 
-// Asigna un rol a un usuario en la tabla `rol_permiso`
+  // Asigna un rol a un usuario en la tabla `rol_permiso`
   Future<void> assignRole(int userId, String rol) async {
     final db = await SQLHelper.db();
     await db.insert('rol_permiso', {
@@ -221,7 +250,7 @@ class SQLHelper {
     });
   }
 
-// Métodos para productos
+  // Métodos para productos
 
   static Future<List<Map<String, dynamic>>> getAllProductos() async {
     final db = await SQLHelper.db();

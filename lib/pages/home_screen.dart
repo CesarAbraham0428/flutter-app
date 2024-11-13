@@ -50,7 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _addToCart(Map<String, dynamic> product) {
+  void _addToCart(Map<String, dynamic> product) async {
+    final cartItems = await SQLHelper.getCartItemsForProduct(product['id']);
+    int currentQuantityInCart = cartItems.fold(0, (sum, item) => sum + (item['cantidad'] as int));
+
     showDialog(
       context: context,
       builder: (context) {
@@ -60,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Disponibles: ${product['cantidad_producto']}'),
+              Text('Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
               TextField(
                 controller: _quantityController,
                 decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
@@ -76,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(
               onPressed: () async {
                 int cantidad = int.tryParse(_quantityController.text) ?? 0;
-                if (cantidad > 0 && cantidad <= product['cantidad_producto']) {
+                int newTotalInCart = currentQuantityInCart + cantidad;
+
+                if (cantidad > 0 && newTotalInCart <= product['cantidad_producto']) {
                   await SQLHelper.addToCart(
                     product['id'],
                     product['nombre_product'],
@@ -88,9 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Producto agregado al carrito.')),
                   );
+                  setState(() {}); // Actualiza el estado del carrito
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cantidad no válida')),
+                    const SnackBar(content: Text('Cantidad no válida o supera el stock disponible')),
                   );
                 }
               },
@@ -101,7 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
   Future<void> _viewCart() async {
     final cartItems = await SQLHelper.getCartItems();
     if (mounted) {
@@ -124,6 +129,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ListTile(
                   title: Text(item['nombre_product']),
                   subtitle: Text('Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () async {
+                      await SQLHelper.removeFromCart(item['id']);
+                      setState(() {
+                        _cart.removeAt(index);
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Producto eliminado del carrito.')),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -147,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
     double total = 0;
     for (var item in _cart) {
       total += item['cantidad'] * item['precio'];
+      await SQLHelper.updateProductStock(item['id'], item['cantidad']);
     }
     await MailHelper.send(
       _cart,
