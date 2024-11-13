@@ -14,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _cart = [];
   String? userEmail;
@@ -38,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {
         _products = products;
-        _isLoading = false;
       });
     }
   }
@@ -63,10 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     showDialog(
-      barrierDismissible: false, // Prevent closing by tapping outside
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext dialogContext) {
-        // Use specific context for dialog
         return AlertDialog(
           title: const Text('Carrito de compras'),
           content: SizedBox(
@@ -83,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.delete),
                     onPressed: () async {
                       await SQLHelper.removeFromCart(item['productId']);
-                      Navigator.pop(dialogContext); // Close current dialog
+                      Navigator.pop(dialogContext);
                       if (mounted) {
-                        _viewCart(); // Reopen with updated cart
+                        _viewCart();
                       }
                     },
                   ),
@@ -99,11 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Cerrar'),
             ),
             TextButton(
-              onPressed: () async {
-                await _confirmPurchase();
-                Navigator.pop(
-                    dialogContext); // Close cart dialog after purchase
-              },
+              onPressed: _cart.isEmpty
+                  ? null
+                  : () async {
+                      await _confirmPurchase();
+                      Navigator.pop(dialogContext);
+                    },
               child: Text(
                   'Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
             ),
@@ -114,47 +112,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmPurchase() async {
-    try {
-      double total = 0;
-      for (var item in _cart) {
-        total += item['cantidad'] * item['precio'];
-        await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
-      }
+    double total = 0;
+    for (var item in _cart) {
+      total += item['cantidad'] * item['precio'];
+      await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
+    }
 
-      await MailHelper.send(
-        _cart,
-        total,
-        userEmail ?? '',
+    await MailHelper.send(
+      _cart,
+      total,
+      userEmail ?? '',
+    );
+
+    await SQLHelper.clearCart();
+
+    if (mounted) {
+      setState(() {
+        _cart.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
-
-      await SQLHelper.clearCart();
-
-      if (mounted) {
-        setState(() {
-          _cart.clear();
-        });
-
-        Navigator.of(context).pop(); // Close cart dialog
-
-        await _fetchProducts(); // Refresh products list
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                '¡Compra completada! Se ha enviado un correo con los detalles.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al procesar la compra. Intente nuevamente.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -248,37 +232,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _products.isEmpty
-              ? const Center(child: Text('No hay productos disponibles'))
-              : ListView.builder(
-                  itemCount: _products.length,
-                  itemBuilder: (context, index) {
-                    final product = _products[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.all(10),
-                      leading: Image.network(
-                        product['imagen'],
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, size: 50),
-                      ),
-                      title: Text(product['nombre_product']),
-                      subtitle: Text(
-                        'Precio: \$${product['precio']}  |  Cantidad: ${product['cantidad_producto']}',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.add_shopping_cart),
-                        onPressed: () {
-                          _addToCart(product);
-                        },
-                      ),
-                    );
-                  },
-                ),
+      body: ListView.builder(
+        itemCount: _products.length,
+        itemBuilder: (context, index) {
+          final product = _products[index];
+          return ListTile(
+            contentPadding: const EdgeInsets.all(10),
+            leading: Image.network(
+              product['imagen'],
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, size: 50),
+            ),
+            title: Text(product['nombre_product']),
+            subtitle: Text('Precio: \$${product['precio']}'),
+            trailing: IconButton(
+              icon: const Icon(Icons.add_shopping_cart),
+              onPressed: () {
+                _addToCart(product);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 }
