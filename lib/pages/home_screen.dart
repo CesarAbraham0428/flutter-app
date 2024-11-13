@@ -1,4 +1,5 @@
 // lib/pages/home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/db_helper.dart';
 import 'package:flutter_application_2/mail_helper.dart';
@@ -15,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _products = [];
+  List<Map<String, dynamic>> _cart = [];
   String? userEmail;
 
   @override
@@ -22,8 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchProducts();
     _loadUserEmail();
-    Inactividad()
-        .initialize(context); // Inicia el temporizador al abrir HomeScreen
+    Inactividad().initialize(context);
   }
 
   @override
@@ -42,102 +43,117 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-Future<void> _loadUserEmail() async {
+  Future<void> _loadUserEmail() async {
     final email = await SQLHelper.getUserEmail(widget.userId);
     setState(() {
       userEmail = email;
-});
-}
+    });
+  }
 
-void _buyProduct(Map<String, dynamic> product) {
-  Inactividad().startTimer(context);
-  showDialog(
-    context: context,
-    builder: (context) {
-      final TextEditingController _quantityController = TextEditingController();
-      final TextEditingController _emailController = TextEditingController();
-      
-      // Pre-fill email if available
-      if (userEmail != null) {
-        _emailController.text = userEmail!;
-      }
-
-      return AlertDialog(
-        title: Text('Comprar ${product['nombre_product']}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Cantidad disponible: ${product['cantidad_producto']}'),
-            TextField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Cantidad a comprar'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _emailController,
-              enabled: false, // Make it read-only since we're using user's email
-              decoration: const InputDecoration(labelText: 'Correo electrónico'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+  void _addToCart(Map<String, dynamic> product) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController _quantityController = TextEditingController();
+        return AlertDialog(
+          title: Text('Agregar ${product['nombre_product']} al carrito'),
+          content: TextField(
+            controller: _quantityController,
+            decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
+            keyboardType: TextInputType.number,
           ),
-          TextButton(
-            onPressed: () async {
-              int cantidadComprada = int.tryParse(_quantityController.text) ?? 0;
-              
-              if (cantidadComprada > 0 &&
-                  cantidadComprada <= product['cantidad_producto'] &&
-                  userEmail != null) {
-                double precioTotal = cantidadComprada.toDouble() * product['precio'];
-                int nuevaCantidad = product['cantidad_producto'] - cantidadComprada;
-
-                await SQLHelper.updateProducto(
-                  product['id'],
-                  product['nombre_product'],
-                  product['precio'],
-                  nuevaCantidad,
-                  product['imagen'],
-                );
-
-                await MailHelper.send(
-                  product['nombre_product'],
-                  product['imagen'],
-                  cantidadComprada,
-                  precioTotal,
-                  userEmail!, // Use the stored user email
-                );
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Compra realizada con éxito. Se ha enviado un correo.'),
-                    ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                int cantidad = int.tryParse(_quantityController.text) ?? 0;
+                if (cantidad > 0 && cantidad <= product['cantidad_producto']) {
+                  await SQLHelper.addToCart(
+                    product['id'],
+                    product['nombre_product'],
+                    product['precio'],
+                    cantidad,
+                    product['imagen'],
                   );
                   Navigator.pop(context);
-                }
-
-                _fetchProducts();
-              } else {
-                if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cantidad no válida o correo no disponible')),
+                    const SnackBar(content: Text('Producto agregado al carrito.')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cantidad no válida')),
                   );
                 }
-              }
-            },
-            child: const Text('Comprar'),
+              },
+              child: const Text('Agregar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _viewCart() async {
+    final cartItems = await SQLHelper.getCartItems();
+    if (mounted) {
+      setState(() {
+        _cart = cartItems;
+      });
+    }
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Carrito de compras'),
+          content: SizedBox(
+            height: 300,
+            child: ListView.builder(
+              itemCount: _cart.length,
+              itemBuilder: (context, index) {
+                final item = _cart[index];
+                return ListTile(
+                  title: Text(item['nombre_product']),
+                  subtitle: Text('Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
+                );
+              },
+            ),
           ),
-        ],
-      );
-    },
-  );
-}
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+            TextButton(
+              onPressed: _confirmPurchase,
+              child: const Text('Confirmar compra'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmPurchase() async {
+    double total = 0;
+    for (var item in _cart) {
+      total += item['cantidad'] * item['precio'];
+    }
+    await MailHelper.send(
+      'Resumen de compra',
+      '',  // No es necesario enviar imagen
+      _cart.length,
+      total,
+      userEmail ?? '',
+    );
+    await SQLHelper.clearCart();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Compra confirmada y correo enviado.')),
+    );
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,10 +164,8 @@ void _buyProduct(Map<String, dynamic> product) {
         backgroundColor: const Color.fromARGB(255, 231, 221, 188),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: _viewCart,
           ),
         ],
       ),
@@ -178,9 +192,9 @@ void _buyProduct(Map<String, dynamic> product) {
                         'Precio: \$${product['precio']}  |  Cantidad: ${product['cantidad_producto']}',
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.shopping_cart),
+                        icon: const Icon(Icons.add_shopping_cart),
                         onPressed: () {
-                          _buyProduct(product);
+                          _addToCart(product);
                         },
                       ),
                     );

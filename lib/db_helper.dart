@@ -22,19 +22,55 @@ class SQLHelper {
     )""");
 
     await database.execute('''CREATE TABLE rol_permiso(
-            id INTEGER PRIMARY KEY,
-            userId INTEGER,
-            rol TEXT,
-            FOREIGN KEY (userId) REFERENCES user_app (id) ON DELETE CASCADE
-            )''');
-  }
+    id INTEGER PRIMARY KEY,
+    userId INTEGER,
+    rol TEXT,
+    FOREIGN KEY (userId) REFERENCES user_app (id) ON DELETE CASCADE
+    )''');
 
+    await database.execute("""CREATE TABLE carrito(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    productId INTEGER,
+    nombre_product TEXT,
+    precio DOUBLE,
+    cantidad INTEGER,
+    imagen TEXT,
+    FOREIGN KEY (productId) REFERENCES producto_app (id) ON DELETE CASCADE
+    )""");
+  }
+  
   static Future<sql.Database> db() async {
-    return sql.openDatabase("database_name.db", version: 1,
+    return sql.openDatabase("database_name.db", version: 2,
         onCreate: (sql.Database database, int version) async {
       await createTables(database);
     });
   }
+
+// Métodos para el carrito
+
+  static Future<int> addToCart(int productId, String nombreProduct, double precio, int cantidad, String imagen) async {
+    final db = await SQLHelper.db();
+    final cartItem = {
+      'productId': productId,
+      'nombre_product': nombreProduct,
+      'precio': precio,
+      'cantidad': cantidad,
+      'imagen': imagen,
+    };
+    return await db.insert('carrito', cartItem, conflictAlgorithm: sql.ConflictAlgorithm.replace);
+  }
+
+  static Future<List<Map<String, dynamic>>> getCartItems() async {
+    final db = await SQLHelper.db();
+    return db.query('carrito', orderBy: 'id');
+  }
+
+  static Future<void> clearCart() async {
+    final db = await SQLHelper.db();
+    await db.delete('carrito');
+  }
+
+  //Métodos para el usuario
 
   static Future<int> createUser(String user, String email, String? pass) async {
     final db = await SQLHelper.db();
