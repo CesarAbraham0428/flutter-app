@@ -52,21 +52,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _addToCart(Map<String, dynamic> product) async {
     final cartItems = await SQLHelper.getCartItemsForProduct(product['id']);
-    int currentQuantityInCart = cartItems.fold(0, (sum, item) => sum + (item['cantidad'] as int));
+    int currentQuantityInCart =
+        cartItems.fold(0, (sum, item) => sum + (item['cantidad'] as int));
 
     showDialog(
       context: context,
       builder: (context) {
-        final TextEditingController _quantityController = TextEditingController();
+        final TextEditingController _quantityController =
+            TextEditingController();
         return AlertDialog(
           title: Text('Agregar ${product['nombre_product']} al carrito'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
+              Text(
+                  'Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
               TextField(
                 controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
+                decoration:
+                    const InputDecoration(labelText: 'Cantidad a agregar'),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -81,7 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 int cantidad = int.tryParse(_quantityController.text) ?? 0;
                 int newTotalInCart = currentQuantityInCart + cantidad;
 
-                if (cantidad > 0 && newTotalInCart <= product['cantidad_producto']) {
+                if (cantidad > 0 &&
+                    newTotalInCart <= product['cantidad_producto']) {
                   await SQLHelper.addToCart(
                     product['id'],
                     product['nombre_product'],
@@ -91,12 +96,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Producto agregado al carrito.')),
+                    const SnackBar(
+                        content: Text('Producto agregado al carrito.')),
                   );
                   setState(() {}); // Actualiza el estado del carrito
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cantidad no válida o supera el stock disponible')),
+                    const SnackBar(
+                        content: Text(
+                            'Cantidad no válida o supera el stock disponible')),
                   );
                 }
               },
@@ -107,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+
   Future<void> _viewCart() async {
     final cartItems = await SQLHelper.getCartItems();
     if (mounted) {
@@ -114,7 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _cart = cartItems;
       });
     }
-    double total = _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
+    double total =
+        _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
     showDialog(
       context: context,
       builder: (context) {
@@ -128,16 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 final item = _cart[index];
                 return ListTile(
                   title: Text(item['nombre_product']),
-                  subtitle: Text('Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
+                  subtitle: Text(
+                      'Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () async {
-                      await SQLHelper.removeFromCart(item['productId']); // Elimina del carrito
-                      setState(() {
-                        _cart.removeAt(index); // Actualiza la lista local
-                      });
+                      await SQLHelper.removeFromCart(
+                          item['productId']); // Elimina del carrito
+                      await _viewCart(); // Actualiza la lista completa del carrito
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Producto eliminado del carrito.')),
+                        const SnackBar(
+                            content: Text('Producto eliminado del carrito.')),
                       );
                     },
                   ),
@@ -152,7 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: _confirmPurchase,
-              child: Text('Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
+              child: Text(
+                  'Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
             ),
           ],
         );
@@ -176,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _cart.clear(); // Limpia el carrito local
     });
-    await _fetchProducts(); // Actualiza la lista de productos para reflejar el stock reducido
+    await _fetchProducts(); // Actualiza productos para reflejar el stock reducido
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Compra confirmada y correo enviado.')),
@@ -184,13 +196,12 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pop(context);
   }
 
-  // Función adicional para limpiar el carrito al cerrar sesión
   Future<void> _logout() async {
     await SQLHelper.clearCart(); // Limpia el carrito en la base de datos
     setState(() {
       _cart.clear(); // Limpia el carrito local
     });
-    // Lógica adicional para cerrar sesión si es necesario
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
