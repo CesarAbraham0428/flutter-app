@@ -125,9 +125,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     double total =
         _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
+
+    if (!mounted) return;
+
     showDialog(
+      barrierDismissible: false, // Prevent closing by tapping outside
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
+        // Use specific context for dialog
         return AlertDialog(
           title: const Text('Carrito de compras'),
           content: SizedBox(
@@ -143,13 +148,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () async {
-                      await SQLHelper.removeFromCart(
-                          item['productId']); // Elimina del carrito
-                      await _viewCart(); // Actualiza la lista completa del carrito
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Producto eliminado del carrito.')),
-                      );
+                      await SQLHelper.removeFromCart(item['productId']);
+                      Navigator.pop(dialogContext); // Close current dialog
+                      if (mounted) {
+                        _viewCart(); // Reopen with updated cart
+                      }
                     },
                   ),
                 );
@@ -158,11 +161,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cerrar'),
             ),
             TextButton(
-              onPressed: _confirmPurchase,
+              onPressed: () async {
+                await _confirmPurchase();
+                Navigator.pop(
+                    dialogContext); // Close cart dialog after purchase
+              },
               child: Text(
                   'Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
             ),
@@ -173,35 +180,69 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmPurchase() async {
-    double total = 0;
-    for (var item in _cart) {
-      total += item['cantidad'] * item['precio'];
-      await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
+    try {
+      double total = 0;
+      for (var item in _cart) {
+        total += item['cantidad'] * item['precio'];
+        await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
+      }
+
+      await MailHelper.send(
+        _cart,
+        total,
+        userEmail ?? '',
+      );
+
+      await SQLHelper.clearCart();
+
+      if (mounted) {
+        setState(() {
+          _cart.clear();
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '¡Compra completada! Se ha enviado un correo con los detalles.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      await _fetchProducts();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar la compra: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-
-    await MailHelper.send(
-      _cart,
-      total,
-      userEmail ?? '',
-    );
-    await SQLHelper.clearCart();
-    setState(() {
-      _cart.clear(); // Limpia el carrito local
-    });
-    await _fetchProducts(); // Actualiza productos para reflejar el stock reducido
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Compra confirmada y correo enviado.')),
-    );
-    Navigator.pop(context);
   }
 
   Future<void> _logout() async {
-    await SQLHelper.clearCart(); // Limpia el carrito en la base de datos
-    setState(() {
-      _cart.clear(); // Limpia el carrito local
-    });
-    Navigator.pushReplacementNamed(context, '/login');
+    try {
+      await SQLHelper.clearCart();
+      if (mounted) {
+        setState(() {
+          _cart.clear();
+        });
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al cerrar sesión. Intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
