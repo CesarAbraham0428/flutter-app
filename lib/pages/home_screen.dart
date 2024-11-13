@@ -50,72 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _addToCart(Map<String, dynamic> product) async {
-    final cartItems = await SQLHelper.getCartItemsForProduct(product['id']);
-    int currentQuantityInCart =
-        cartItems.fold(0, (sum, item) => sum + (item['cantidad'] as int));
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        final TextEditingController _quantityController =
-            TextEditingController();
-        return AlertDialog(
-          title: Text('Agregar ${product['nombre_product']} al carrito'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                  'Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
-              TextField(
-                controller: _quantityController,
-                decoration:
-                    const InputDecoration(labelText: 'Cantidad a agregar'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                int cantidad = int.tryParse(_quantityController.text) ?? 0;
-                int newTotalInCart = currentQuantityInCart + cantidad;
-
-                if (cantidad > 0 &&
-                    newTotalInCart <= product['cantidad_producto']) {
-                  await SQLHelper.addToCart(
-                    product['id'],
-                    product['nombre_product'],
-                    product['precio'],
-                    cantidad,
-                    product['imagen'],
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Producto agregado al carrito.')),
-                  );
-                  setState(() {}); // Actualiza el estado del carrito
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Cantidad no válida o supera el stock disponible')),
-                  );
-                }
-              },
-              child: const Text('Agregar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _viewCart() async {
     final cartItems = await SQLHelper.getCartItems();
     if (mounted) {
@@ -200,7 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _cart.clear();
         });
 
-        // Show success message
+        Navigator.of(context).pop(); // Close cart dialog
+
+        await _fetchProducts(); // Refresh products list
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -209,13 +146,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
-
-      await _fetchProducts();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al procesar la compra: ${e.toString()}'),
+          const SnackBar(
+            content: Text('Error al procesar la compra. Intente nuevamente.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -224,25 +159,75 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
-    try {
-      await SQLHelper.clearCart();
-      if (mounted) {
-        setState(() {
-          _cart.clear();
-        });
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/login', (route) => false);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al cerrar sesión. Intente nuevamente.'),
-            backgroundColor: Colors.red,
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+
+  Future<void> _addToCart(Map<String, dynamic> product) async {
+    final cartItems = await SQLHelper.getCartItemsForProduct(product['id']);
+    int currentQuantityInCart =
+        cartItems.fold(0, (sum, item) => sum + (item['cantidad'] as int));
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final TextEditingController _quantityController =
+            TextEditingController();
+        return AlertDialog(
+          title: Text('Agregar ${product['nombre_product']} al carrito'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  'Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
+              TextField(
+                controller: _quantityController,
+                decoration:
+                    const InputDecoration(labelText: 'Cantidad a agregar'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                int cantidad = int.tryParse(_quantityController.text) ?? 0;
+                int newTotalInCart = currentQuantityInCart + cantidad;
+
+                if (cantidad > 0 &&
+                    newTotalInCart <= product['cantidad_producto']) {
+                  await SQLHelper.addToCart(
+                    product['id'],
+                    product['nombre_product'],
+                    product['precio'],
+                    cantidad,
+                    product['imagen'],
+                  );
+                  Navigator.pop(dialogContext);
+                  await _fetchProducts(); // Refresh products list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Producto agregado al carrito.')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Cantidad no válida o supera el stock disponible')),
+                  );
+                }
+              },
+              child: const Text('Agregar'),
+            ),
+          ],
         );
-      }
-    }
+      },
+    );
   }
 
   @override
