@@ -132,9 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () async {
-                      await SQLHelper.removeFromCart(item['id']);
+                      await SQLHelper.removeFromCart(item['productId']); // Elimina del carrito
                       setState(() {
-                        _cart.removeAt(index);
+                        _cart.removeAt(index); // Actualiza la lista local
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Producto eliminado del carrito.')),
@@ -164,18 +164,33 @@ class _HomeScreenState extends State<HomeScreen> {
     double total = 0;
     for (var item in _cart) {
       total += item['cantidad'] * item['precio'];
-      await SQLHelper.updateProductStock(item['id'], item['cantidad']);
+      await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
     }
+
     await MailHelper.send(
       _cart,
       total,
       userEmail ?? '',
     );
     await SQLHelper.clearCart();
+    setState(() {
+      _cart.clear(); // Limpia el carrito local
+    });
+    await _fetchProducts(); // Actualiza la lista de productos para reflejar el stock reducido
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Compra confirmada y correo enviado.')),
     );
     Navigator.pop(context);
+  }
+
+  // Función adicional para limpiar el carrito al cerrar sesión
+  Future<void> _logout() async {
+    await SQLHelper.clearCart(); // Limpia el carrito en la base de datos
+    setState(() {
+      _cart.clear(); // Limpia el carrito local
+    });
+    // Lógica adicional para cerrar sesión si es necesario
   }
 
   @override
@@ -189,6 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             onPressed: _viewCart,
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout, // Llama a la función de cierre de sesión
           ),
         ],
       ),
