@@ -1,12 +1,10 @@
-//lib/mail_helper.dart
+// lib/mail_helper.dart
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 class MailHelper {
   static Future<void> send(
-    String nombreProducto,
-    String imagenUrl,
-    int cantidadComprada,
+    List<Map<String, dynamic>> cartItems,
     double precioTotal,
     String destino // Correo del usuario
   ) async {
@@ -14,17 +12,33 @@ class MailHelper {
     String password = 'kbwh zjrr caba kkre';
     final smtpServer = gmail(username, password);
 
+    String itemsHtml = cartItems.map((item) {
+      return """
+        <tr>
+          <td>${item['nombre_product']}</td>
+          <td>${item['cantidad']}</td>
+          <td>\$${item['precio']}</td>
+          <td><img src="${item['imagen']}" width="50" height="50"></td>
+        </tr>
+      """;
+    }).join();
+
     final message = Message()
       ..from = Address(username, 'Cesar Abraham')
       ..recipients.add(destino)
-      ..subject = 'Detalle de la compra: $nombreProducto'
-      ..text = 'Has comprado $cantidadComprada unidades de $nombreProducto por un total de \$${precioTotal.toStringAsFixed(2)}.'
+      ..subject = 'Detalles de tu compra'
       ..html = """
         <h1>Detalle de la compra</h1>
-        <p><strong>Producto:</strong> $nombreProducto</p>
-        <p><strong>Cantidad:</strong> $cantidadComprada</p>
-        <p><strong>Precio total:</strong> \$${precioTotal.toStringAsFixed(2)}</p>
-        <img src="$imagenUrl" alt="$nombreProducto" style="max-width: 300px;">
+        <table border="1" style="width:100%; text-align:left;">
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Imagen</th>
+          </tr>
+          $itemsHtml
+        </table>
+        <p><strong>Total de la compra:</strong> \$${precioTotal.toStringAsFixed(2)}</p>
       """;
 
     try {

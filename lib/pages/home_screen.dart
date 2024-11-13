@@ -57,10 +57,16 @@ class _HomeScreenState extends State<HomeScreen> {
         final TextEditingController _quantityController = TextEditingController();
         return AlertDialog(
           title: Text('Agregar ${product['nombre_product']} al carrito'),
-          content: TextField(
-            controller: _quantityController,
-            decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
-            keyboardType: TextInputType.number,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Disponibles: ${product['cantidad_producto']}'),
+              TextField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Cantidad a agregar'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -103,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _cart = cartItems;
       });
     }
+    double total = _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
     showDialog(
       context: context,
       builder: (context) {
@@ -128,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: _confirmPurchase,
-              child: const Text('Confirmar compra'),
+              child: Text('Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
             ),
           ],
         );
@@ -142,9 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
       total += item['cantidad'] * item['precio'];
     }
     await MailHelper.send(
-      'Resumen de compra',
-      '',  // No es necesario enviar imagen
-      _cart.length,
+      _cart,
       total,
       userEmail ?? '',
     );
