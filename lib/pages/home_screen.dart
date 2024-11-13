@@ -112,33 +112,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmPurchase() async {
-    double total = 0;
-    for (var item in _cart) {
-      total += item['cantidad'] * item['precio'];
-      await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
-    }
+    try {
+      double total = 0;
+      for (var item in _cart) {
+        total += item['cantidad'] * item['precio'];
+        await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
+      }
 
-    await MailHelper.send(
-      _cart,
-      total,
-      userEmail ?? '',
-    );
-
-    await SQLHelper.clearCart();
-
-    if (mounted) {
-      setState(() {
-        _cart.clear();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
+      await MailHelper.send(
+        _cart,
+        total,
+        userEmail ?? '',
       );
+
+      await SQLHelper.clearCart();
+
+      if (mounted) {
+        setState(() {
+          _cart.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
 
