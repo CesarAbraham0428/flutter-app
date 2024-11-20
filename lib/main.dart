@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_application_2/helpers/http.dart';
 import 'package:flutter_application_2/routes/app_routes.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Cargar las configuraciones del archivo .env
+  if (isDesktop()) {
+    sqfliteFfiInit(); // Inicializa FFI
+    databaseFactory =
+        databaseFactoryFfi; // Establece el `databaseFactory` global
+  }
+
+  // Cargar las clsconfiguraciones del archivo .env
   await dotenv.load(fileName: ".env");
 
   // Inicializar el cliente HTTP con la URL base y el token del archivo .env
@@ -16,6 +23,12 @@ Future<void> main() async {
   );
 
   runApp(MyApp(http: http));
+}
+
+bool isDesktop() {
+  // Función para verificar si estamos en un entorno de escritorio
+  return !identical(
+      0, 0.0); // Hack para detectar si se ejecuta en Flutter Desktop
 }
 
 class MyApp extends StatelessWidget {
