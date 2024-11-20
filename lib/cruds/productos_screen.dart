@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_2/db_helper.dart';
+import 'package:flutter_application_2/helpers/db_helper.dart';
 
 class ProductosScreen extends StatefulWidget {
   const ProductosScreen({Key? key}) : super(key: key);

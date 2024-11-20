@@ -1,5 +1,5 @@
 //lib/db_helper.dart
-import 'package:flutter_application_2/encyption_helper.dart';
+import 'package:flutter_application_2/helpers/encyption_helper.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 
 class SQLHelper {

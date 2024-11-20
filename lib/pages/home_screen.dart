@@ -1,8 +1,8 @@
 // lib/pages/home_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_2/db_helper.dart';
-import 'package:flutter_application_2/mail_helper.dart';
+import 'package:flutter_application_2/helpers/db_helper.dart';
+import 'package:flutter_application_2/helpers/mail_helper.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {

@@ -1,6 +1,6 @@
 //lib/cruds/usuarios_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_application_2/db_helper.dart';
+import 'package:flutter_application_2/helpers/db_helper.dart';
 
 class UsuariosScreen extends StatefulWidget {
   const UsuariosScreen({Key? key}) : super(key: key);
