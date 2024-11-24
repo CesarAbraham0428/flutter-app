@@ -4,7 +4,7 @@ import '../services/product_service.dart';
 class ProductListPage extends StatefulWidget {
   final ProductService productService;
 
-  ProductListPage({required this.productService});
+  const ProductListPage({super.key, required this.productService});
 
   @override
   _ProductListPageState createState() => _ProductListPageState();
@@ -47,7 +47,7 @@ class _ProductListPageState extends State<ProductListPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Search products',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
@@ -62,11 +62,11 @@ class _ProductListPageState extends State<ProductListPage> {
               future: _products,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No products found'));
+                  return const Center(child: Text('No products found'));
                 } else {
                   return ListView.builder(
                     itemCount: snapshot.data!.length,

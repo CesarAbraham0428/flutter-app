@@ -8,27 +8,24 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (isDesktop()) {
-    sqfliteFfiInit(); // Inicializa FFI
-    databaseFactory =
-        databaseFactoryFfi; // Establece el `databaseFactory` global
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
   }
 
-  // Cargar las clsconfiguraciones del archivo .env
+  // Cargar las configuraciones del archivo .env
   await dotenv.load(fileName: ".env");
 
-  // Inicializar el cliente HTTP con la URL base y el token del archivo .env
+  // Inicializar el cliente HTTP con valores del archivo .env
   final http = Http(
-    baseUrl: dotenv.env['API_BASE_URL'] ?? '',
-    token: dotenv.env['AUTH_TOKEN'],
+    baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://default-url.com',
+    token: dotenv.env['AUTH_TOKEN'] ?? 'default-token',
   );
 
   runApp(MyApp(http: http));
 }
 
 bool isDesktop() {
-  // Función para verificar si estamos en un entorno de escritorio
-  return !identical(
-      0, 0.0); // Hack para detectar si se ejecuta en Flutter Desktop
+  return !identical(0, 0.0); // Hack para detectar Flutter Desktop
 }
 
 class MyApp extends StatelessWidget {

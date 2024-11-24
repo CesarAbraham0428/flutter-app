@@ -1,8 +1,7 @@
-// lib/pages/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/helpers/db_helper.dart';
 import 'package:flutter_application_2/helpers/mail_helper.dart';
+import 'package:flutter_application_2/routes/app_routes.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -244,30 +243,45 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: _products.length,
-        itemBuilder: (context, index) {
-          final product = _products[index];
-          return ListTile(
-            contentPadding: const EdgeInsets.all(10),
-            leading: Image.network(
-              product['imagen'],
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, size: 50),
-            ),
-            title: Text(product['nombre_product']),
-            subtitle: Text('Precio: \$${product['precio']}'),
-            trailing: IconButton(
-              icon: const Icon(Icons.add_shopping_cart),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
               onPressed: () {
-                _addToCart(product);
+                Navigator.pushNamed(context, AppRoutes.productList);
+              },
+              child: const Text('Ver Productos de Fake Store API'),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _products.length,
+              itemBuilder: (context, index) {
+                final product = _products[index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.all(10),
+                  leading: Image.network(
+                    product['imagen'],
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.broken_image, size: 50),
+                  ),
+                  title: Text(product['nombre_product']),
+                  subtitle: Text('Precio: \$${product['precio']}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add_shopping_cart),
+                    onPressed: () {
+                      _addToCart(product);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
