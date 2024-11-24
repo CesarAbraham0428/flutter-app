@@ -41,6 +41,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       Map<String, dynamic> userClone = Map<String, dynamic>.from(user);
       List<String> roles = await SQLHelper().getPermissionsForUser(userId);
       userClone['rol'] = roles.isNotEmpty ? roles[0] : 'usuario';
+      userClone['pass'] = user['pass']; // Incluir la contraseña cifrada
       userList.add(userClone);
     }
 
@@ -169,11 +170,14 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       labelText: 'Nueva Contraseña',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
-                            _obscurePassword = !_obscurePassword; // Alternar visibilidad
+                            _obscurePassword =
+                                !_obscurePassword; // Alternar visibilidad
                           });
                         },
                       ),
@@ -262,7 +266,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   return ListTile(
                     title: Text(user['user_name']),
                     subtitle: Text(
-                      'Correo: ${user['email']}\nRol: ${user['rol']}',
+                      'Correo: ${user['email']}\nRol: ${user['rol']}\nContraseña: ${user['pass']}',
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

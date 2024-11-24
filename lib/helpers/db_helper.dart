@@ -48,7 +48,8 @@ class SQLHelper {
 
 // Métodos para el carrito
 
-  static Future<int> addToCart(int productId, String nombreProduct, double precio, int cantidad, String imagen) async {
+  static Future<int> addToCart(int productId, String nombreProduct,
+      double precio, int cantidad, String imagen) async {
     final db = await SQLHelper.db();
     final cartItem = {
       'productId': productId,
@@ -57,7 +58,8 @@ class SQLHelper {
       'cantidad': cantidad,
       'imagen': imagen,
     };
-    return await db.insert('carrito', cartItem, conflictAlgorithm: sql.ConflictAlgorithm.replace);
+    return await db.insert('carrito', cartItem,
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
   }
 
   static Future<List<Map<String, dynamic>>> getCartItems() async {
@@ -71,7 +73,8 @@ class SQLHelper {
   }
 
   // Nueva función para verificar la cantidad de un producto específico en el carrito
-  static Future<List<Map<String, dynamic>>> getCartItemsForProduct(int productId) async {
+  static Future<List<Map<String, dynamic>>> getCartItemsForProduct(
+      int productId) async {
     final db = await SQLHelper.db();
     return db.query(
       'carrito',
@@ -91,7 +94,8 @@ class SQLHelper {
   }
 
   // Nueva función para actualizar el stock del producto en la tabla de inventario
-  static Future<void> updateProductStock(int productId, int cantidadComprada) async {
+  static Future<void> updateProductStock(
+      int productId, int cantidadComprada) async {
     final db = await SQLHelper.db();
     await db.rawUpdate(
       'UPDATE producto_app SET cantidad_producto = cantidad_producto - ? WHERE id = ?',
@@ -111,14 +115,21 @@ class SQLHelper {
       'pass':
           hashedPass, // Guarda la contraseña encriptada en el campo correcto
     };
+
+    // Verificar si es el primer usuario
+    List<Map<String, dynamic>> users = await db.query('user_app');
+    bool isFirstUser = users.isEmpty;
+
     int userId = await db.insert('user_app', userApp,
         conflictAlgorithm: sql.ConflictAlgorithm.replace);
 
     // Asigna el rol de usuario por defecto en rol_permiso
+    String role = isFirstUser ? 'admin' : 'usuario';
     await db.insert('rol_permiso', {
       'userId': userId,
-      'rol': 'usuario',
+      'rol': role,
     });
+
     return userId;
   }
 
@@ -236,8 +247,7 @@ class SQLHelper {
   static Future<void> deleteUser(int id) async {
     final db = await SQLHelper.db();
     try {
-      await db.delete('user_app',
-          where: "id = ?", whereArgs: [id]);
+      await db.delete('user_app', where: "id = ?", whereArgs: [id]);
     } catch (e) {}
   }
 
