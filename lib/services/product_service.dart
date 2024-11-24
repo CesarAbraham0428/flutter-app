@@ -7,20 +7,31 @@ class ProductService {
 
   ProductService({required this.http});
 
-  Future<List<Product>> fetchProducts({String? search, String? category, double? minPrice, double? maxPrice}) async {
+  Future<List<Product>> fetchProducts(
+      {String? search,
+      String? category,
+      double? minPrice,
+      double? maxPrice}) async {
     final queryParameters = {
-      if (search != null) 'search': search,
-      if (category != null) 'category': category,
-      if (minPrice != null) 'minPrice': minPrice.toString(),
-      if (maxPrice != null) 'maxPrice': maxPrice.toString(),
+      if (category != null) 'category': category, // Solo se incluye `category`.
     };
 
-    return await http.request<List<Product>>(
+    // Obtenemos todos los productos
+    final products = await http.request<List<Product>>(
       '/products',
       method: HttpMethod.get,
       queryParameters: queryParameters,
       parser: (data) => (data as List).map((e) => Product.fromJson(e)).toList(),
     );
+
+    // Aplicamos los filtros adicionales en el cliente
+    return products.where((product) {
+      final matchesSearch = search == null ||
+          product.title.toLowerCase().contains(search.toLowerCase());
+      final matchesPrice = (minPrice == null || product.price >= minPrice) &&
+          (maxPrice == null || product.price <= maxPrice);
+      return matchesSearch && matchesPrice;
+    }).toList();
   }
 }
 

@@ -1,4 +1,3 @@
-//lib/pages/product_list_page.dart
 import 'package:flutter/material.dart';
 import '../services/product_service.dart';
 
@@ -12,7 +11,8 @@ class ProductListPage extends StatefulWidget {
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  late Future<List<Product>> _products;
+  List<Product> _products = [];
+  bool _isLoading = false;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
@@ -25,15 +25,34 @@ class _ProductListPageState extends State<ProductListPage> {
     _fetchProducts();
   }
 
-  void _fetchProducts({String? search, String? category, double? minPrice, double? maxPrice}) {
-    setState(() {
-      _products = widget.productService.fetchProducts(
-        search: search,
-        category: category,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
+  Future<void> _fetchProducts() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Llamar a la API y obtener productos
+      final products = await widget.productService.fetchProducts(
+        search: _searchController.text.trim().isEmpty
+            ? null
+            : _searchController.text.trim(),
+        category: _categoryController.text.trim().isEmpty
+            ? null
+            : _categoryController.text.trim(),
+        minPrice: double.tryParse(_minPriceController.text) ?? null,
+        maxPrice: double.tryParse(_maxPriceController.text) ?? null,
       );
-    });
+
+      setState(() => _products = products);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar productos: $error')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _applyFilters() {
+    _fetchProducts();
   }
 
   @override
@@ -53,9 +72,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (value) {
-                _fetchProducts(search: value);
-              },
+              onSubmitted: (_) => _applyFilters(),
             ),
           ),
           Padding(
@@ -67,9 +84,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 prefixIcon: Icon(Icons.category),
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (value) {
-                _fetchProducts(category: value);
-              },
+              onSubmitted: (_) => _applyFilters(),
             ),
           ),
           Padding(
@@ -103,48 +118,82 @@ class _ProductListPageState extends State<ProductListPage> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              _fetchProducts(
-                search: _searchController.text,
-                category: _categoryController.text,
-                minPrice: double.tryParse(_minPriceController.text) ?? 0,
-                maxPrice: double.tryParse(_maxPriceController.text) ?? double.infinity,
-              );
-            },
+            onPressed: _applyFilters,
             child: const Text('Aplicar Filtros'),
           ),
           Expanded(
-            child: FutureBuilder<List<Product>>(
-              future: _products,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Productos no encontrados'));
-                } else {
-                  return ListView.builder(
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      final product = snapshot.data![index];
-                      return ListTile(
-                        leading: Image.network(
-                          product.image,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 50),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _products.isEmpty
+                    ? const Center(child: Text('No se encontraron productos.'))
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2, // Mostrar dos productos por fila
+                          crossAxisSpacing: 8.0,
+                          mainAxisSpacing: 8.0,
+                          childAspectRatio:
+                              0.8, // Ajustar la proporción de las tarjetas
                         ),
-                        title: Text(product.title),
-                        subtitle: Text('${product.category} - \$${product.price}'),
-                      );
-                    },
-                  );
-                }
-              },
-            ),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          final product = _products[index];
+                          return Card(
+                            elevation: 4.0,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Image.network(
+                                    product.image,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(Icons.broken_image,
+                                                size: 50),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    product.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.0,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Text(
+                                    product.category,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12.0,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    '\$${product.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
