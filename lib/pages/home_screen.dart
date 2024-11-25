@@ -251,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.productList);
               },
-              child: const Text('Ver Productos de Fake Store API'),
+              child: const Text('Ver Productos en Línea'),
             ),
           ),
           Expanded(

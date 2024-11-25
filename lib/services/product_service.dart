@@ -7,31 +7,37 @@ class ProductService {
 
   ProductService({required this.http});
 
-  Future<List<Product>> fetchProducts(
-      {String? search,
-      String? category,
-      double? minPrice,
-      double? maxPrice}) async {
+  Future<List<Product>> fetchProducts({
+    String? search,
+    String? category,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
+    // Ajuste para garantizar que se envía el filtro correctamente
     final queryParameters = {
-      if (category != null) 'category': category, // Solo se incluye `category`.
+      if (category != null && category.isNotEmpty) 'category': category,
     };
 
-    // Obtenemos todos los productos
-    final products = await http.request<List<Product>>(
-      '/products',
-      method: HttpMethod.get,
-      queryParameters: queryParameters,
-      parser: (data) => (data as List).map((e) => Product.fromJson(e)).toList(),
-    );
+    try {
+      final products = await http.request<List<Product>>(
+        '/products',
+        method: HttpMethod.get,
+        queryParameters: queryParameters,
+        parser: (data) =>
+            (data as List).map((e) => Product.fromJson(e)).toList(),
+      );
 
-    // Aplicamos los filtros adicionales en el cliente
-    return products.where((product) {
-      final matchesSearch = search == null ||
-          product.title.toLowerCase().contains(search.toLowerCase());
-      final matchesPrice = (minPrice == null || product.price >= minPrice) &&
-          (maxPrice == null || product.price <= maxPrice);
-      return matchesSearch && matchesPrice;
-    }).toList();
+      // Filtros adicionales en el cliente
+      return products.where((product) {
+        final matchesSearch = search == null ||
+            product.title.toLowerCase().contains(search.toLowerCase());
+        final matchesPrice = (minPrice == null || product.price >= minPrice) &&
+            (maxPrice == null || product.price <= maxPrice);
+        return matchesSearch && matchesPrice;
+      }).toList();
+    } catch (error) {
+      throw Exception('Error al obtener productos: $error');
+    }
   }
 }
 

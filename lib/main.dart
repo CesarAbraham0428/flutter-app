@@ -17,8 +17,8 @@ Future<void> main() async {
 
   // Inicializar el cliente HTTP con valores del archivo .env
   final http = Http(
-    baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://default-url.com',
-    token: dotenv.env['AUTH_TOKEN'] ?? 'default-token',
+    baseUrl: dotenv.env['API_BASE_URL'] ?? 'https://fakestoreapi.com',
+    token: dotenv.env['AUTH_TOKEN'],
   );
 
   runApp(MyApp(http: http));

@@ -1,3 +1,4 @@
+//lib\pages\product_list_page.dart
 import 'package:flutter/material.dart';
 import '../services/product_service.dart';
 
@@ -11,7 +12,8 @@ class ProductListPage extends StatefulWidget {
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  List<Product> _products = [];
+  List<Product> _allProducts = []; // Todos los productos recibidos del servidor
+  List<Product> _filteredProducts = []; // Productos filtrados para mostrar
   bool _isLoading = false;
 
   final TextEditingController _searchController = TextEditingController();
@@ -29,19 +31,13 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Llamar a la API y obtener productos
-      final products = await widget.productService.fetchProducts(
-        search: _searchController.text.trim().isEmpty
-            ? null
-            : _searchController.text.trim(),
-        category: _categoryController.text.trim().isEmpty
-            ? null
-            : _categoryController.text.trim(),
-        minPrice: double.tryParse(_minPriceController.text) ?? null,
-        maxPrice: double.tryParse(_maxPriceController.text) ?? null,
-      );
+      // Obtenemos todos los productos del servidor
+      final products = await widget.productService.fetchProducts();
 
-      setState(() => _products = products);
+      setState(() {
+        _allProducts = products;
+        _applyLocalFilters(); // Aplicar filtros locales
+      });
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar productos: $error')),
@@ -51,8 +47,29 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
+  void _applyLocalFilters() {
+    setState(() {
+      _filteredProducts = _allProducts.where((product) {
+        final searchText = _searchController.text.trim().toLowerCase();
+        final categoryText = _categoryController.text.trim().toLowerCase();
+        final minPrice = double.tryParse(_minPriceController.text.trim()) ?? 0;
+        final maxPrice =
+            double.tryParse(_maxPriceController.text.trim()) ?? double.infinity;
+
+        final matchesSearch = searchText.isEmpty ||
+            product.title.toLowerCase().contains(searchText);
+        final matchesCategory = categoryText.isEmpty ||
+            product.category.toLowerCase() == categoryText;
+        final matchesPrice =
+            product.price >= minPrice && product.price <= maxPrice;
+
+        return matchesSearch && matchesCategory && matchesPrice;
+      }).toList();
+    });
+  }
+
   void _applyFilters() {
-    _fetchProducts();
+    _applyLocalFilters();
   }
 
   @override
@@ -72,7 +89,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (_) => _applyFilters(),
+              onChanged: (_) => _applyFilters(),
             ),
           ),
           Padding(
@@ -80,11 +97,11 @@ class _ProductListPageState extends State<ProductListPage> {
             child: TextField(
               controller: _categoryController,
               decoration: const InputDecoration(
-                hintText: 'Filtrar por categoria',
+                hintText: 'Filtrar por categoría (e.g., electronics)',
                 prefixIcon: Icon(Icons.category),
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (_) => _applyFilters(),
+              onChanged: (_) => _applyFilters(),
             ),
           ),
           Padding(
@@ -95,11 +112,12 @@ class _ProductListPageState extends State<ProductListPage> {
                   child: TextField(
                     controller: _minPriceController,
                     decoration: const InputDecoration(
-                      hintText: 'Precio Minimo',
+                      hintText: 'Precio mínimo',
                       prefixIcon: Icon(Icons.attach_money),
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => _applyFilters(),
                   ),
                 ),
                 const SizedBox(width: 8.0),
@@ -107,11 +125,12 @@ class _ProductListPageState extends State<ProductListPage> {
                   child: TextField(
                     controller: _maxPriceController,
                     decoration: const InputDecoration(
-                      hintText: 'Precio Maximo',
+                      hintText: 'Precio máximo',
                       prefixIcon: Icon(Icons.attach_money),
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => _applyFilters(),
                   ),
                 ),
               ],
@@ -124,30 +143,29 @@ class _ProductListPageState extends State<ProductListPage> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _products.isEmpty
+                : _filteredProducts.isEmpty
                     ? const Center(child: Text('No se encontraron productos.'))
                     : GridView.builder(
                         padding: const EdgeInsets.all(8.0),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, // Mostrar dos productos por fila
+                          crossAxisCount: 2, // Dos productos por fila
                           crossAxisSpacing: 8.0,
                           mainAxisSpacing: 8.0,
-                          childAspectRatio:
-                              0.8, // Ajustar la proporción de las tarjetas
+                          childAspectRatio: 0.9,
                         ),
-                        itemCount: _products.length,
+                        itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) {
-                          final product = _products[index];
+                          final product = _filteredProducts[index];
                           return Card(
                             elevation: 4.0,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
+                                AspectRatio(
+                                  aspectRatio: 1.5,
                                   child: Image.network(
                                     product.image,
-                                    width: double.infinity,
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
