@@ -3,11 +3,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_application_2/helpers/http.dart';
 import 'package:flutter_application_2/routes/app_routes.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:io' show Platform;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (isDesktop()) {
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -22,10 +23,6 @@ Future<void> main() async {
   );
 
   runApp(MyApp(http: http));
-}
-
-bool isDesktop() {
-  return !identical(0, 0.0); // Hack para detectar Flutter Desktop
 }
 
 class MyApp extends StatelessWidget {

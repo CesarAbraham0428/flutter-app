@@ -1,4 +1,3 @@
-//lib\pages\product_list_page.dart
 import 'package:flutter/material.dart';
 import '../services/product_service.dart';
 
@@ -12,8 +11,8 @@ class ProductListPage extends StatefulWidget {
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  List<Product> _allProducts = []; // Todos los productos recibidos del servidor
-  List<Product> _filteredProducts = []; // Productos filtrados para mostrar
+  List<Product> _allProducts = [];
+  List<Product> _filteredProducts = [];
   bool _isLoading = false;
 
   final TextEditingController _searchController = TextEditingController();
@@ -31,12 +30,11 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Obtenemos todos los productos del servidor
       final products = await widget.productService.fetchProducts();
 
       setState(() {
         _allProducts = products;
-        _applyLocalFilters(); // Aplicar filtros locales
+        _applyLocalFilters();
       });
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +50,8 @@ class _ProductListPageState extends State<ProductListPage> {
       _filteredProducts = _allProducts.where((product) {
         final searchText = _searchController.text.trim().toLowerCase();
         final categoryText = _categoryController.text.trim().toLowerCase();
-        final minPrice = double.tryParse(_minPriceController.text.trim()) ?? 0;
+        final minPrice =
+            double.tryParse(_minPriceController.text.trim()) ?? 0;
         final maxPrice =
             double.tryParse(_maxPriceController.text.trim()) ?? double.infinity;
 
@@ -145,69 +144,74 @@ class _ProductListPageState extends State<ProductListPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredProducts.isEmpty
                     ? const Center(child: Text('No se encontraron productos.'))
-                    : GridView.builder(
+                    : ListView.builder(
                         padding: const EdgeInsets.all(8.0),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, // Dos productos por fila
-                          crossAxisSpacing: 8.0,
-                          mainAxisSpacing: 8.0,
-                          childAspectRatio: 0.9,
-                        ),
                         itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = _filteredProducts[index];
                           return Card(
                             elevation: 4.0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AspectRatio(
-                                  aspectRatio: 1.5,
-                                  child: Image.network(
-                                    product.image,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Icon(Icons.broken_image,
-                                                size: 50),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    product.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14.0,
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 8.0,
+                              horizontal: 4.0,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 100, // Establecemos un ancho fijo
+                                    height: 100, // Establecemos un alto fijo
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      child: Image.network(
+                                        product.image,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const Icon(
+                                          Icons.broken_image,
+                                          size: 50,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: Text(
-                                    product.category,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12.0,
+                                  const SizedBox(width: 8.0),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                          product.category,
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 14.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                          '\$${product.price.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16.0,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    '\$${product.price.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14.0,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
