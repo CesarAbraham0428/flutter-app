@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../services/product_service.dart';
 
@@ -50,8 +51,7 @@ class _ProductListPageState extends State<ProductListPage> {
       _filteredProducts = _allProducts.where((product) {
         final searchText = _searchController.text.trim().toLowerCase();
         final categoryText = _categoryController.text.trim().toLowerCase();
-        final minPrice =
-            double.tryParse(_minPriceController.text.trim()) ?? 0;
+        final minPrice = double.tryParse(_minPriceController.text.trim()) ?? 0;
         final maxPrice =
             double.tryParse(_maxPriceController.text.trim()) ?? double.infinity;
 
@@ -161,17 +161,22 @@ class _ProductListPageState extends State<ProductListPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
-                                    width: 100, // Establecemos un ancho fijo
-                                    height: 100, // Establecemos un alto fijo
+                                    width: 100,
+                                    height: 100,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8.0),
-                                      child: Image.network(
-                                        product.image,
+                                      child: CachedNetworkImage(
+                                        imageUrl: product.image,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
+                                        placeholder: (context, url) =>
+                                            const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                        errorWidget: (context, url, error) =>
                                             const Icon(
                                           Icons.broken_image,
                                           size: 50,
+                                          color: Colors.grey,
                                         ),
                                       ),
                                     ),
@@ -179,7 +184,8 @@ class _ProductListPageState extends State<ProductListPage> {
                                   const SizedBox(width: 8.0),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           product.title,
