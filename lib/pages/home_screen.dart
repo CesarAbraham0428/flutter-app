@@ -84,17 +84,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           note: "Contactanos para cualquier aclaración",
           onSuccess: (Map params) async {
+            Navigator.of(context).pop(); // Cerrar la ventana de PayPal
             await _confirmPurchase();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('¡Pago completado con éxito!'),
+                backgroundColor: Colors.green,
+              ),
+            );
           },
           onError: (error) {
+            Navigator.of(context)
+                .pop(); // Cerrar la ventana de PayPal en caso de error
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Error en el pago: \${error.toString()}"),
+                content: Text("Error en el pago: ${error.toString()}"),
                 backgroundColor: Colors.red,
               ),
             );
           },
           onCancel: () {
+            Navigator.of(context).pop(); // Cerrar la ventana de PayPal
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text("Pago cancelado"),
@@ -107,6 +117,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _confirmPurchase() async {
+    try {
+      double total = 0;
+      for (var item in _cart) {
+        total += item['cantidad'] * item['precio'];
+        await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
+      }
+
+      await MailHelper.send(
+        _cart,
+        total,
+        userEmail ?? '',
+      );
+
+      await SQLHelper.clearCart();
+
+      if (mounted) {
+        setState(() {
+          _cart.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar la compra: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showPaymentOptions(double total) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Selecciona el método de pago'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.payment),
+                title: const Text('Pago Normal'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmPurchase();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: Image.network(
+                  'https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg',
+                  width: 24,
+                  height: 24,
+                ),
+                title: const Text('Pagar con PayPal'),
+                subtitle: const Text('Inicia sesión con tu cuenta de PayPal'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handlePaypalCheckout(total);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _viewCart() async {
     final cartItems = await SQLHelper.getCartItems();
     if (mounted) {
@@ -114,10 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _cart = cartItems;
       });
     }
-    double total = _cart.fold(
-        0,
-        (sum, item) =>
-            sum + (item['cantidad'] as int) * (item['precio'] as double));
+    double total =
+        _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
 
     if (!mounted) return;
 
@@ -166,68 +260,24 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cerrar'),
             ),
-            if (_cart.isNotEmpty) ...[
+            if (_cart.isNotEmpty)
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(dialogContext);
-                  _handlePaypalCheckout(total);
+                  _showPaymentOptions(total);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0070BA), // PayPal blue
+                  backgroundColor: Colors.green,
                 ),
                 child: const Text(
-                  'Pagar con PayPal',
+                  'Proceder al pago',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-            ],
           ],
         );
       },
     );
-  }
-
-  Future<void> _confirmPurchase() async {
-    try {
-      double total = 0;
-      for (var item in _cart) {
-        total += item['cantidad'] * item['precio'];
-        await SQLHelper.updateProductStock(item['productId'], item['cantidad']);
-      }
-
-      await MailHelper.send(
-        _cart,
-        total,
-        userEmail ?? '',
-      );
-
-      await SQLHelper.clearCart();
-
-      if (mounted) {
-        setState(() {
-          _cart.clear();
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                '¡Compra completada exitosamente! Se ha enviado un correo con los detalles.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _logout() async {
@@ -244,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        final TextEditingController _quantityController =
+        final TextEditingController quantityController =
             TextEditingController();
         return AlertDialog(
           title: Text('Agregar ${product['nombre_product']} al carrito'),
@@ -254,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                   'Disponibles: ${product['cantidad_producto'] - currentQuantityInCart}'),
               TextField(
-                controller: _quantityController,
+                controller: quantityController,
                 decoration:
                     const InputDecoration(labelText: 'Cantidad a agregar'),
                 keyboardType: TextInputType.number,
@@ -268,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () async {
-                int cantidad = int.tryParse(_quantityController.text) ?? 0;
+                int cantidad = int.tryParse(quantityController.text) ?? 0;
                 int newTotalInCart = currentQuantityInCart + cantidad;
 
                 if (cantidad > 0 &&
@@ -281,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     product['imagen'],
                   );
                   Navigator.pop(dialogContext);
-                  await _fetchProducts(); // Refresh products list
+                  await _fetchProducts();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text('Producto agregado al carrito.')),
