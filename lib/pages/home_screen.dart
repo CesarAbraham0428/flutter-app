@@ -1,10 +1,11 @@
+//lib\pages\home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/helpers/db_helper.dart';
 import 'package:flutter_application_2/helpers/mail_helper.dart';
 import 'package:flutter_application_2/routes/app_routes.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
 import 'package:flutter_application_2/services/paypal_service.dart';
-import 'package:flutter_paypal/flutter_paypal.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   final int userId;
@@ -49,66 +50,47 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _handlePaypalCheckout(double total) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (BuildContext context) => UsePaypal(
-          sandboxMode: PaypalService.sandbox,
-          clientId: PaypalService.clientId,
-          secretKey: PaypalService.clientSecret,
-          returnURL: PaypalService.returnURL,
-          cancelURL: PaypalService.cancelURL,
-          transactions: [
-            {
-              "amount": {
-                "total": total.toString(),
-                "currency": PaypalService.currency,
-                "details": {
-                  "subtotal": total.toString(),
-                  "shipping": '0',
-                  "shipping_discount": 0
-                }
-              },
-              "description": "Compra de productos",
-              // Simplificamos la lista de items para un proceso más rápido
-              "item_list": {
-                "items": [
-                  {
-                    "name": "Compra total",
-                    "quantity": 1,
-                    "price": total.toString(),
-                    "currency": PaypalService.currency
-                  }
-                ]
-              }
-            }
-          ],
-          note: "Gracias por tu compra",
-          onSuccess: (Map params) async {
-            Navigator.pop(context);
-            await _confirmPurchase(isPayPal: true);
-          },
-          onError: (error) {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Error en el pago: ${error.toString()}"),
-                backgroundColor: Colors.red,
-              ),
-            );
-          },
-          onCancel: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Pago cancelado"),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          },
+  void _handlePaypalCheckout(double total) async {
+    final paypalService = PaypalService();
+    try {
+      final approvalUrl = await paypalService.createPayment(total);
+      if (approvalUrl != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => WebViewWidget(
+              controller: WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..loadRequest(Uri.parse(approvalUrl))
+                ..setNavigationDelegate(
+                  NavigationDelegate(
+                    onNavigationRequest: (NavigationRequest request) {
+                      if (request.url.contains(PaypalService.returnURL)) {
+                        Navigator.pop(context); // Volver después del éxito
+                        _confirmPurchase(isPayPal: true);
+                        return NavigationDecision.prevent;
+                      } else if (request.url
+                          .contains(PaypalService.cancelURL)) {
+                        Navigator.pop(context); // Manejo de cancelación
+                        return NavigationDecision.prevent;
+                      }
+                      return NavigationDecision.navigate;
+                    },
+                  ),
+                ),
+            ),
+          ),
+        );
+      } else {
+        throw Exception('No se pudo obtener la URL de aprobación.');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error en el pago: ${e.toString()}"),
+          backgroundColor: Colors.red,
         ),
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _confirmPurchase({bool isPayPal = false}) async {
