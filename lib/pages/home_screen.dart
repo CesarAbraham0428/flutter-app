@@ -3,6 +3,8 @@ import 'package:flutter_application_2/helpers/db_helper.dart';
 import 'package:flutter_application_2/helpers/mail_helper.dart';
 import 'package:flutter_application_2/routes/app_routes.dart';
 import 'package:flutter_application_2/services/inactividad.dart';
+import 'package:flutter_application_2/services/paypal_service.dart';
+import 'package:flutter_paypal/flutter_paypal.dart';
 
 class HomeScreen extends StatefulWidget {
   final int userId;
@@ -47,6 +49,64 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _handlePaypalCheckout(double total) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (BuildContext context) => UsePaypal(
+          sandboxMode: PaypalService.sandbox,
+          clientId: PaypalService.clientId,
+          secretKey: PaypalService.clientSecret,
+          returnURL: "https://samplesite.com/return",
+          cancelURL: "https://samplesite.com/cancel",
+          transactions: [
+            {
+              "amount": {
+                "total": total.toString(),
+                "currency": PaypalService.currency,
+                "details": {
+                  "subtotal": total.toString(),
+                  "shipping": '0',
+                  "shipping_discount": 0
+                }
+              },
+              "description": "Compra de productos en la tienda",
+              "item_list": {
+                "items": _cart
+                    .map((item) => {
+                          "name": item['nombre_product'],
+                          "quantity": item['cantidad'],
+                          "price": item['precio'].toString(),
+                          "currency": PaypalService.currency
+                        })
+                    .toList(),
+              }
+            }
+          ],
+          note: "Contactanos para cualquier aclaración",
+          onSuccess: (Map params) async {
+            await _confirmPurchase();
+          },
+          onError: (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Error en el pago: \${error.toString()}"),
+                backgroundColor: Colors.red,
+              ),
+            );
+          },
+          onCancel: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Pago cancelado"),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _viewCart() async {
     final cartItems = await SQLHelper.getCartItems();
     if (mounted) {
@@ -54,8 +114,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _cart = cartItems;
       });
     }
-    double total =
-        _cart.fold(0, (sum, item) => sum + item['cantidad'] * item['precio']);
+    double total = _cart.fold(
+        0,
+        (sum, item) =>
+            sum + (item['cantidad'] as int) * (item['precio'] as double));
 
     if (!mounted) return;
 
@@ -67,26 +129,36 @@ class _HomeScreenState extends State<HomeScreen> {
           title: const Text('Carrito de compras'),
           content: SizedBox(
             height: 300,
-            child: ListView.builder(
-              itemCount: _cart.length,
-              itemBuilder: (context, index) {
-                final item = _cart[index];
-                return ListTile(
-                  title: Text(item['nombre_product']),
-                  subtitle: Text(
-                      'Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () async {
-                      await SQLHelper.removeFromCart(item['productId']);
-                      Navigator.pop(dialogContext);
-                      if (mounted) {
-                        _viewCart();
-                      }
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _cart.length,
+                    itemBuilder: (context, index) {
+                      final item = _cart[index];
+                      return ListTile(
+                        title: Text(item['nombre_product']),
+                        subtitle: Text(
+                            'Cantidad: ${item['cantidad']} - Precio: \$${item['precio']}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () async {
+                            await SQLHelper.removeFromCart(item['productId']);
+                            Navigator.pop(dialogContext);
+                            if (mounted) {
+                              _viewCart();
+                            }
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 10),
+                Text('Total: \$${total.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
             ),
           ),
           actions: [
@@ -94,16 +166,21 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cerrar'),
             ),
-            TextButton(
-              onPressed: _cart.isEmpty
-                  ? null
-                  : () async {
-                      await _confirmPurchase();
-                      Navigator.pop(dialogContext);
-                    },
-              child: Text(
-                  'Confirmar compra (Total: \$${total.toStringAsFixed(2)})'),
-            ),
+            if (_cart.isNotEmpty) ...[
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _handlePaypalCheckout(total);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0070BA), // PayPal blue
+                ),
+                child: const Text(
+                  'Pagar con PayPal',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           ],
         );
       },
@@ -239,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _logout, // Llama a la función de cierre de sesión
+            onPressed: _logout,
           ),
         ],
       ),
