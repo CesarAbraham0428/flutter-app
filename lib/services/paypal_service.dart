@@ -5,7 +5,11 @@ class PaypalService {
   static String get clientSecret => dotenv.env['Client_Secret'] ?? '';
   static String get sandboxUrl => 'https://api.sandbox.paypal.com';
   
-  static bool get sandbox => true; // Set to false for production
+  static bool get sandbox => true;
   
   static String get currency => 'USD';
+  
+  // URLs simplificadas para el proceso de pago
+  static String get returnURL => "https://success.example.com";
+  static String get cancelURL => "https://cancel.example.com";
 }
